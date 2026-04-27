@@ -3,7 +3,7 @@
     <SiteHeader :show-title="true" :show-search="true" />
 
     <section class="hero">
-      <img src="/main.png" alt="Ticketing event hero image" />
+      <img :src="`${baseUrl}main.png`" alt="Ticketing event hero image" />
       <div class="hero-overlay"></div>
 
       <div class="hero-text">
@@ -18,6 +18,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import SiteHeader from '../components/SiteHeader.vue'
+const baseUrl = import.meta.env.BASE_URL
 
 const router = useRouter()
 

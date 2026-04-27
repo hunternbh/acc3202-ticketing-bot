@@ -73,7 +73,7 @@ const events = [
   {
     id: 1,
     title: 'Hunter X One',
-    image: '/hunter-1.png',
+    image: `${import.meta.env.BASE_URL}hunter-1.png`,
     date: 'Apr 25 · Sat · 1:00 PM',
     venue: 'Audit Control Theatre',
     shortVenue: 'Audit Control Theatre',
@@ -83,7 +83,7 @@ const events = [
   {
     id: 2,
     title: 'Hunter X Two',
-    image: '/hunter-2.png',
+    image: `${import.meta.env.BASE_URL}hunter-2.png`,
     date: 'Apr 25 · Sat · 2:00 PM',
     venue: 'Revenue Recognition Hall',
     shortVenue: 'Revenue Recognition Hall',
@@ -93,7 +93,7 @@ const events = [
   {
     id: 3,
     title: 'Hunter X Three',
-    image: '/hunter-3.png',
+    image: `${import.meta.env.BASE_URL}hunter-3.png`,
     date: 'Apr 25 · Sat · 3:00 PM',
     venue: 'Bot Detection Center',
     shortVenue: 'Bot Detection Center',
@@ -103,7 +103,7 @@ const events = [
   {
     id: 4,
     title: 'Hunter X Four',
-    image: '/hunter-4.png',
+    image: `${import.meta.env.BASE_URL}hunter-4.png`,
     date: 'Apr 25 · Sat · 4:00 PM',
     venue: 'Central Park Carousel',
     shortVenue: 'Central Park Carousel',
@@ -113,7 +113,7 @@ const events = [
   {
     id: 5,
     title: 'Hunter X Five',
-    image: '/hunter-5.png',
+    image: `${import.meta.env.BASE_URL}hunter-5.png`,
     date: 'Apr 25 · Sat · 5:00 PM',
     venue: 'ACC3202 Classroom Simulation',
     shortVenue: 'ACC3202 Simulation',
