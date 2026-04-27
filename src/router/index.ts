@@ -8,6 +8,7 @@ import CartView from '../views/CartView.vue'
 import PurchaseSuccessView from '../views/PurchaseSuccessView.vue'
 import PurchaseFailureView from '../views/PurchaseFailureView.vue'
 import MyAccountView from '../views/MyAccountView.vue'
+import AdminHoldingsView from '../views/AdminHoldingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +37,11 @@ const router = createRouter({
       path: '/events/:id',
       name: 'event',
       component: EventView,
+    },
+    {
+      path: '/admin/holdings',
+      name: 'admin-holdings',
+      component: AdminHoldingsView,
     },
     {
       path: '/cart',
