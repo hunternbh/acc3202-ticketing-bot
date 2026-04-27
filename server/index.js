@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { query, getClient } from './db.js'
 import fs from 'fs'
-import bcrypt from 'bcryptjs'
 const app = express()
 
 const PORT = process.env.PORT || 10000
