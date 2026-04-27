@@ -14,12 +14,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
 }))
 
-app.options('*', cors({
-  origin: 'https://hunternbh.github.io',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
-}))
-
 app.use(express.json())
 
 const PORT = process.env.PORT || 10000
