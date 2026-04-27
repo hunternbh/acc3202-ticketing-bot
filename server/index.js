@@ -7,34 +7,23 @@ import { query, getClient } from './db.js'
 import fs from 'fs'
 
 const app = express()
-app.use(cors())
+
+app.use(cors({
+  origin: 'https://hunternbh.github.io',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
+}))
+
+app.options('*', cors({
+  origin: 'https://hunternbh.github.io',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
+}))
+
 app.use(express.json())
+
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
-
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://hunternbh.github.io',
-  'https://hunternbh.github.io/acc3202-ticketing-bot',
-]
-
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error(`CORS blocked for origin: ${origin}`))
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
-  })
-)
-
-app.options('*', cors())
-
-app.use(express.json())
 
 function createToken(user) {
   return jwt.sign(
