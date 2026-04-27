@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { query, getClient } from './db.js'
 import fs from 'fs'
-import cors from 'cors'
 
 const app = express()
 app.use(cors())
