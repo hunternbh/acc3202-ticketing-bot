@@ -66,6 +66,70 @@ function adminRequired(req, res, next) {
   next()
 }
 
+app.get('/api/my-holdings', authRequired, async (req, res) => {
+  const userResult = await query(
+    `
+    SELECT id, email, wallet_balance
+    FROM users
+    WHERE id = $1
+    `,
+    [req.user.id]
+  )
+
+  const user = userResult.rows[0]
+
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' })
+  }
+
+  const holdingsResult = await query(
+    `
+    SELECT
+      purchases.id AS purchase_id,
+      purchases.created_at,
+      events.id AS event_id,
+      events.title AS event_title,
+      events.venue AS event_venue,
+      events.event_date,
+      ticket_types.name AS ticket_type,
+      purchase_items.quantity,
+      purchase_items.unit_price,
+      purchase_items.quantity * purchase_items.unit_price AS subtotal
+    FROM purchases
+    JOIN purchase_items
+      ON purchase_items.purchase_id = purchases.id
+    JOIN ticket_types
+      ON ticket_types.id = purchase_items.ticket_type_id
+    JOIN events
+      ON events.id = purchases.event_id
+    WHERE purchases.user_id = $1
+      AND purchases.status = 'SUCCESS'
+    ORDER BY purchases.created_at DESC
+    `,
+    [req.user.id]
+  )
+
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      walletBalance: Number(user.wallet_balance),
+    },
+    holdings: holdingsResult.rows.map((row) => ({
+      purchaseId: row.purchase_id,
+      createdAt: row.created_at,
+      eventId: row.event_id,
+      eventTitle: row.event_title,
+      eventVenue: row.event_venue,
+      eventDate: row.event_date,
+      ticketType: row.ticket_type,
+      quantity: Number(row.quantity),
+      unitPrice: Number(row.unit_price),
+      subtotal: Number(row.subtotal),
+    })),
+  })
+})
+
 async function writeAuditLog({
   userId = null,
   action,
@@ -493,6 +557,44 @@ app.post('/api/admin/release', authRequired, adminRequired, async (req, res) => 
     success: true,
     ticket,
   })
+})
+
+app.get('/api/admin/holdings', authRequired, adminRequired, async (req, res) => {
+  const result = await query(
+    `
+    SELECT
+      users.id AS user_id,
+      users.email,
+      users.wallet_balance,
+      events.title AS event_title,
+      ticket_types.name AS ticket_type,
+      SUM(purchase_items.quantity) AS quantity_owned,
+      SUM(purchase_items.quantity * purchase_items.unit_price) AS amount_spent
+    FROM users
+    LEFT JOIN purchases
+      ON purchases.user_id = users.id
+      AND purchases.status = 'SUCCESS'
+    LEFT JOIN purchase_items
+      ON purchase_items.purchase_id = purchases.id
+    LEFT JOIN ticket_types
+      ON ticket_types.id = purchase_items.ticket_type_id
+    LEFT JOIN events
+      ON events.id = purchases.event_id
+    WHERE users.is_admin = FALSE
+    GROUP BY
+      users.id,
+      users.email,
+      users.wallet_balance,
+      events.title,
+      ticket_types.name
+    ORDER BY
+      users.email,
+      events.title,
+      ticket_types.name
+    `
+  )
+
+  res.json(result.rows)
 })
 
 app.get('/api/admin/audit-logs', authRequired, adminRequired, async (req, res) => {

@@ -17,8 +17,14 @@
         </nav>
 
         <div v-if="currentUser" class="user-box">
-          <div class="user-email">{{ currentUser.email }}</div>
-          <div class="wallet">Wallet: ${{ currentUser.walletBalance.toFixed(2) }}</div>
+          <RouterLink to="/my-account" class="account-link">
+            {{ currentUser.email }}
+          </RouterLink>
+
+          <RouterLink to="/my-account" class="wallet">
+            Wallet: ${{ currentUser.walletBalance.toFixed(2) }}
+          </RouterLink>
+
           <button @click="logout">Log Out</button>
         </div>
 
@@ -320,4 +326,25 @@ input {
     height: 58px;
   }
 }
+.account-link {
+  color: white;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.account-link:hover {
+  text-decoration: underline;
+}
+
+.wallet {
+  color: white;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.16);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
 </style>

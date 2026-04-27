@@ -43,7 +43,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import { mockUsers } from '../data/users'
 
 const emit = defineEmits(['close', 'login-success'])
 
@@ -51,30 +50,38 @@ const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 
-function handleLogin() {
+async function handleLogin() {
   errorMessage.value = ''
 
-  const user = mockUsers.find(
-    (item) =>
-      item.email.toLowerCase() === email.value.trim().toLowerCase() &&
-      item.password === password.value
-  )
+  try {
+    const API_BASE = import.meta.env.VITE_API_BASE_URL
 
-  if (!user) {
-    errorMessage.value = 'Invalid email or password.'
-    return
+    const response = await fetch(`${API_BASE}/api/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.value.trim(),
+        password: password.value,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      errorMessage.value = data.error || 'Invalid email or password.'
+      return
+    }
+
+    localStorage.setItem('ticketToken', data.token)
+    localStorage.setItem('ticketUser', JSON.stringify(data.user))
+
+    emit('login-success', data.user)
+    emit('close')
+  } catch (error) {
+    errorMessage.value = 'Could not connect to the login server.'
   }
-
-  const sessionUser = {
-    id: user.id,
-    email: user.email,
-    walletBalance: user.walletBalance,
-  }
-
-  localStorage.setItem('ticketUser', JSON.stringify(sessionUser))
-
-  emit('login-success', sessionUser)
-  emit('close')
 }
 </script>
 

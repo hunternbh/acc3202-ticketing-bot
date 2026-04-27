@@ -7,6 +7,7 @@ import EventView from '../views/EventView.vue'
 import CartView from '../views/CartView.vue'
 import PurchaseSuccessView from '../views/PurchaseSuccessView.vue'
 import PurchaseFailureView from '../views/PurchaseFailureView.vue'
+import MyAccountView from '../views/MyAccountView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: '/purchase/failure',
       name: 'purchase-failure',
       component: PurchaseFailureView,
+    },
+    {
+      path: '/my-account',
+      name: 'my-account',
+      component: MyAccountView,
     },
   ],
 })

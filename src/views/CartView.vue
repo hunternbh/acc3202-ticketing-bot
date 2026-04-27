@@ -121,29 +121,98 @@ function goBack() {
   }
 }
 
-function confirmPurchase() {
+async function confirmPurchase() {
   if (!cart.value) {
     router.push('/purchase/failure')
     return
   }
 
-  const result = {
-    eventTitle: cart.value.eventTitle,
-    eventDate: cart.value.eventDate,
-    eventVenue: cart.value.eventVenue,
-    tickets: cart.value.tickets,
-    total: cart.value.total,
-    walletBalance: walletBalance.value,
-    balanceAfterPurchase: balanceAfterPurchase.value,
-    timestamp: new Date().toISOString(),
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const token = localStorage.getItem('ticketToken')
+
+  if (!token) {
+    localStorage.setItem(
+      'ticketPurchaseResult',
+      JSON.stringify({
+        eventTitle: cart.value.eventTitle,
+        eventDate: cart.value.eventDate,
+        eventVenue: cart.value.eventVenue,
+        tickets: cart.value.tickets,
+        total: cart.value.total,
+        walletBalance: 0,
+        balanceAfterPurchase: 0,
+        failureReason: 'You must sign in before purchasing tickets.',
+        timestamp: new Date().toISOString(),
+      })
+    )
+
+    router.push('/purchase/failure')
+    return
   }
 
-  localStorage.setItem('ticketPurchaseResult', JSON.stringify(result))
+  try {
+    const response = await fetch(`${API_BASE}/api/purchase`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        eventId: cart.value.eventId,
+        items: cart.value.tickets.map((ticket) => ({
+          ticketTypeId: ticket.id,
+          quantity: ticket.quantity,
+        })),
+      }),
+    })
 
-  if (cart.value.total <= walletBalance.value) {
+    const data = await response.json()
+
+    const result = {
+      eventTitle: cart.value.eventTitle,
+      eventDate: cart.value.eventDate,
+      eventVenue: cart.value.eventVenue,
+      tickets: cart.value.tickets,
+      total: cart.value.total,
+      walletBalance: data.walletBalance ?? 0,
+      balanceAfterPurchase: data.walletBalance ?? 0,
+      purchaseId: data.purchaseId,
+      failureReason: data.error,
+      timestamp: new Date().toISOString(),
+    }
+
+    localStorage.setItem('ticketPurchaseResult', JSON.stringify(result))
+
+    if (!response.ok) {
+      router.push('/purchase/failure')
+      return
+    }
+
+    const storedUser = localStorage.getItem('ticketUser')
+    if (storedUser) {
+      const user = JSON.parse(storedUser)
+      user.walletBalance = data.walletBalance
+      localStorage.setItem('ticketUser', JSON.stringify(user))
+    }
+
     localStorage.removeItem('ticketCart')
     router.push('/purchase/success')
-  } else {
+  } catch (error) {
+    localStorage.setItem(
+      'ticketPurchaseResult',
+      JSON.stringify({
+        eventTitle: cart.value.eventTitle,
+        eventDate: cart.value.eventDate,
+        eventVenue: cart.value.eventVenue,
+        tickets: cart.value.tickets,
+        total: cart.value.total,
+        walletBalance: 0,
+        balanceAfterPurchase: 0,
+        failureReason: 'Could not connect to the purchase server.',
+        timestamp: new Date().toISOString(),
+      })
+    )
+
     router.push('/purchase/failure')
   }
 }
