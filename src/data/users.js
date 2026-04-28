@@ -74,5 +74,5 @@ export const mockUsers = [
   { id: 73, email: 'dingling.chen76@hunter-ticket.com', password: 'L9vQ1Tb7Mx', walletBalance: 3 },
   { id: 74, email: 'abdul.adeniji37@hunter-ticket.com', password: 'r4Kz6Wp2Nc', walletBalance: 3 },
   { id: 75, email: 'ziannaalfiya.gallego73@hunter-ticket.com', password: 'Y8mL3Qx9Tv', walletBalance: 3 },
-  { id: 76, email: 'test', password: 'test', walletBalance: 99 },
+  { id: 76, email: 'test@test', password: 'test', walletBalance: 99 },
 ]
