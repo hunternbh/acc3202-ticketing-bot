@@ -51,12 +51,12 @@
           <div>
             <label>DATES</label>
             <select v-model="selectedDate">
-              <option>All Dates</option>
-              <option>Today</option>
-              <option>This Weekend</option>
-              <option>Next 7 Days</option>
-              <option>May 2026</option>
-            </select>
+            <option value="1">Apr 25 1pm</option>
+            <option value="2">Apr 25 2pm</option>
+            <option value="3">Apr 25 3pm</option>
+            <option value="4">Apr 25 4pm</option>
+            <option value="5">Apr 25 5pm</option>
+          </select>
           </div>
         </div>
 
@@ -68,7 +68,12 @@
               v-model="searchTerm"
               type="text"
               placeholder="Artist, Event or Venue"
+              @input="showSearchTip = true"
             />
+
+            <div v-if="showSearchTip" class="search-tip">
+              Only Hunter is allowed.
+            </div>
           </div>
         </div>
 
@@ -86,7 +91,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import LoginModal from './LoginModal.vue'
 
 defineProps({
@@ -100,8 +105,11 @@ defineProps({
   },
 })
 
-const selectedDate = ref('All Dates')
+const router = useRouter()
+
+const selectedDate = ref('1')
 const searchTerm = ref('')
+const showSearchTip = ref(false)
 const showLogin = ref(false)
 const currentUser = ref(null)
 
@@ -122,11 +130,15 @@ function logout() {
 }
 
 function runSearch() {
-  console.log({
-    location: 'NYC',
-    date: selectedDate.value,
-    search: searchTerm.value,
-  })
+  const normalizedSearch = searchTerm.value.trim().toLowerCase()
+
+  if (normalizedSearch && normalizedSearch !== 'hunter') {
+    showSearchTip.value = true
+    router.push('/concerts')
+    return
+  }
+
+  router.push(`/events/${selectedDate.value}`)
 }
 </script>
 
@@ -255,6 +267,24 @@ function runSearch() {
   border-right: 1px solid #ddd;
 }
 
+.search-input-wrap {
+  position: relative;
+}
+
+.search-tip {
+  position: absolute;
+  left: 24px;
+  bottom: -28px;
+  background: #111;
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 4px;
+  z-index: 10;
+  white-space: nowrap;
+}
+
 .icon {
   color: #0057ff;
   font-size: 28px;
@@ -299,16 +329,43 @@ input {
 }
 
 @media (max-width: 1000px) {
+  .main-header {
+    padding: 22px 18px 36px;
+  }
+
   .nav-row {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .brand {
+    font-size: 30px;
   }
 
   .nav-links {
-    display: none;
+    display: flex;
+    gap: 18px;
+    font-size: 18px;
+    flex-wrap: wrap;
+  }
+
+  .signin {
+    font-size: 17px;
+    text-align: left;
+    padding: 0;
   }
 
   .user-box {
+    display: flex;
     flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .course-title {
+    font-size: 24px;
+    margin: 24px auto 20px;
   }
 
   .search-card {
@@ -326,6 +383,40 @@ input {
     height: 58px;
   }
 }
+
+
+@media (max-width: 520px) {
+  .utility-bar {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  .main-header {
+    padding: 18px 16px 30px;
+  }
+
+  .brand {
+    font-size: 26px;
+  }
+
+  .nav-links {
+    gap: 14px;
+    font-size: 16px;
+  }
+
+  .user-email,
+  .account-link {
+    font-size: 13px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .wallet {
+    font-size: 13px;
+  }
+}
+
 .account-link {
   color: white;
   font-size: 15px;
