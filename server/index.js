@@ -19,6 +19,51 @@ app.use(express.json())
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
 
+// In-memory rate-limit store.
+// Good enough for a classroom sandbox on one Render instance.
+const rateLimitStore = new Map()
+
+function rateLimit({
+  keyPrefix,
+  maxRequests = 2,
+  windowMs = 1000,
+  getKey,
+}) {
+  return async function rateLimitMiddleware(req, res, next) {
+    const key = `${keyPrefix}:${getKey(req)}`
+    const now = Date.now()
+
+    const existing = rateLimitStore.get(key) || []
+    const recent = existing.filter((timestamp) => now - timestamp < windowMs)
+
+    if (recent.length >= maxRequests) {
+      await writeAuditLog({
+        userId: req.user?.id || null,
+        action: 'RATE_LIMIT_BLOCKED',
+        success: false,
+        metadata: {
+          path: req.path,
+          method: req.method,
+          key,
+          maxRequests,
+          windowMs,
+          recentCount: recent.length,
+        },
+      })
+
+      return res.status(429).json({
+        error: 'Too many requests. Please slow down.',
+        retryAfterSeconds: Math.ceil(windowMs / 1000),
+      })
+    }
+
+    recent.push(now)
+    rateLimitStore.set(key, recent)
+
+    next()
+  }
+}
+
 function createToken(user) {
   return jwt.sign(
     {
@@ -47,6 +92,13 @@ function authRequired(req, res, next) {
   }
 }
 
+const userTwoPerSecond = rateLimit({
+  keyPrefix: 'user',
+  maxRequests: 5,
+  windowMs: 1000,
+  getKey: (req) => req.user?.id || req.ip,
+})
+
 function adminRequired(req, res, next) {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: 'Admin access required' })
@@ -55,7 +107,7 @@ function adminRequired(req, res, next) {
   next()
 }
 
-app.get('/api/my-holdings', authRequired, async (req, res) => {
+app.get('/api/my-holdings', authRequired, userTwoPerSecond, async (req, res) => {
   const userResult = await query(
     `
     SELECT id, email, wallet_balance
@@ -203,7 +255,7 @@ app.post('/api/login', async (req, res) => {
   })
 })
 
-app.get('/api/me', authRequired, async (req, res) => {
+app.get('/api/me', authRequired, userTwoPerSecond, async (req, res) => {
   const result = await query(
     `
     SELECT id, email, wallet_balance, is_admin
@@ -282,7 +334,7 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
   })
 })
 
-app.post('/api/purchase', authRequired, async (req, res) => {
+app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
   const { eventId, items } = req.body
 
   if (!eventId || !Array.isArray(items) || items.length === 0) {
@@ -643,13 +695,84 @@ app.post('/api/admin/seed-database', async (req, res) => {
     await query(schema)
 
     const users = [
-      { email: 'student01@hunter-ticket.com', password: 'pass01', isAdmin: false },
-      { email: 'student02@hunter-ticket.com', password: 'pass02', isAdmin: false },
-      { email: 'student03@hunter-ticket.com', password: 'pass03', isAdmin: false },
-      { email: 'student04@hunter-ticket.com', password: 'pass04', isAdmin: false },
-      { email: 'student05@hunter-ticket.com', password: 'pass05', isAdmin: false },
-      { email: 'admin@hunter-ticket.com', password: 'adminpass', isAdmin: true },
-    ]
+  { email: 'brien.spence22@hunter-ticket.com', password: 'K7mQ2vR9xT', walletBalance: 3, isAdmin: false },
+  { email: 'brian.okonski38@hunter-ticket.com', password: 'p4Wz8Nq1Ld', walletBalance: 3, isAdmin: false },
+  { email: 'fuge.jia92@hunter-ticket.com', password: 'X9rT6bY2mC', walletBalance: 3, isAdmin: false },
+  { email: 'luis.vargas207@hunter-ticket.com', password: 'q8Lw3Vz7Np', walletBalance: 3, isAdmin: false },
+  { email: 'yongen.li71@hunter-ticket.com', password: 'B2nM9cK5rV', walletBalance: 3, isAdmin: false },
+  { email: 'peijun.liu22@hunter-ticket.com', password: 't6Rz1Qx8La', walletBalance: 3, isAdmin: false },
+  { email: 'haoran.zhuo55@hunter-ticket.com', password: 'M5vP2kN7sQ', walletBalance: 3, isAdmin: false },
+  { email: 'sean.hong76@hunter-ticket.com', password: 'z3Kb8Yw4Rt', walletBalance: 3, isAdmin: false },
+  { email: 'guy.fedida55@hunter-ticket.com', password: 'N9xL2qV6mP', walletBalance: 3, isAdmin: false },
+  { email: 'azriel.alfitri39@hunter-ticket.com', password: 'c7Wm4Tz1Ry', walletBalance: 3, isAdmin: false },
+  { email: 'alden.guo42@hunter-ticket.com', password: 'P8qN3bK6xL', walletBalance: 3, isAdmin: false },
+  { email: 'heinchialexan.wufeng20@hunter-ticket.com', password: 'v2Yt9Mz5Qc', walletBalance: 3, isAdmin: false },
+  { email: 'khalid.benoit99@hunter-ticket.com', password: 'L4rX7nB1wK', walletBalance: 3, isAdmin: false },
+  { email: 'destiny.rivera70@hunter-ticket.com', password: 's9Qp2Vz6Tm', walletBalance: 3, isAdmin: false },
+  { email: 'bryan.joserosario44@hunter-ticket.com', password: 'D6mK8xR3nY', walletBalance: 3, isAdmin: false },
+  { email: 'ani.kiknadze79@hunter-ticket.com', password: 'w1Tz7Lp4Qx', walletBalance: 3, isAdmin: false },
+  { email: 'jiaxian.wu67@hunter-ticket.com', password: 'R5bN9cM2vK', walletBalance: 3, isAdmin: false },
+  { email: 'antanina.labacheuskaya59@hunter-ticket.com', password: 'x8Vq3Lz6Wp', walletBalance: 3, isAdmin: false },
+  { email: 'meerim.taalaibekkyzy92@hunter-ticket.com', password: 'K2pY7mR4nQ', walletBalance: 3, isAdmin: false },
+  { email: 'airong.li53@hunter-ticket.com', password: 't9Cw5Xq1Lb', walletBalance: 3, isAdmin: false },
+  { email: 'muhammad.huzaifah80@hunter-ticket.com', password: 'N3vR8kP6zM', walletBalance: 3, isAdmin: false },
+  { email: 'thiti.das45@hunter-ticket.com', password: 'q6Lx2Wm9Tc', walletBalance: 3, isAdmin: false },
+  { email: 'sezim.taalaibekova04@hunter-ticket.com', password: 'B7nQ4zV1Rp', walletBalance: 3, isAdmin: false },
+  { email: 'kenny.le44@hunter-ticket.com', password: 'm2Kx8Yt5Wq', walletBalance: 3, isAdmin: false },
+  { email: 'raymond.li50@hunter-ticket.com', password: 'P9cL3vR6Nz', walletBalance: 3, isAdmin: false },
+  { email: 'yixiang.tan56@hunter-ticket.com', password: 'w5Qm1Kx7Tb', walletBalance: 3, isAdmin: false },
+  { email: 'lhakpa.sherpa636@hunter-ticket.com', password: 'R8zN2pV4Lc', walletBalance: 3, isAdmin: false },
+  { email: 'lhakpa.sherpa09@hunter-ticket.com', password: 'x1Tq9M6wKb', walletBalance: 3, isAdmin: false },
+  { email: 'yeshi.lhakey81@hunter-ticket.com', password: 'L6vP3zY8Qm', walletBalance: 3, isAdmin: false },
+  { email: 'ying.jiang10@hunter-ticket.com', password: 'c4Kx7R2nWt', walletBalance: 3, isAdmin: false },
+  { email: 'porfirio.martinez38@hunter-ticket.com', password: 'M9qB5vL1Zp', walletBalance: 3, isAdmin: false },
+  { email: 'tony.zheng08@hunter-ticket.com', password: 't2Wn8Kc6Rx', walletBalance: 3, isAdmin: false },
+  { email: 'drupattie.naul90@hunter-ticket.com', password: 'Q7mL4zP9vN', walletBalance: 3, isAdmin: false },
+  { email: 'xiaoru.lin05@hunter-ticket.com', password: 'b5Xq1Tn8Kp', walletBalance: 3, isAdmin: false },
+  { email: 'emily.hu16@hunter-ticket.com', password: 'V3rK9mW2Lc', walletBalance: 3, isAdmin: false },
+  { email: 'tony.zeng44@hunter-ticket.com', password: 'p8Nq6Zx1Tb', walletBalance: 3, isAdmin: false },
+  { email: 'anson.huang77@hunter-ticket.com', password: 'K4wR7vM2Qz', walletBalance: 3, isAdmin: false },
+  { email: 'jonathan.rojasvilchis44@hunter-ticket.com', password: 'x9Lz3Cp6Vn', walletBalance: 3, isAdmin: false },
+  { email: 'hurairah.mustafa68@hunter-ticket.com', password: 'T1mQ8Kb5Rw', walletBalance: 3, isAdmin: false },
+  { email: 'dingwen.chen41@hunter-ticket.com', password: 'n7Vx2Lz9Pc', walletBalance: 3, isAdmin: false },
+  { email: 'afifa.nuha36@hunter-ticket.com', password: 'B6qW3Rm8Yt', walletBalance: 3, isAdmin: false },
+  { email: 'melody.kwok85@hunter-ticket.com', password: 'z2Kp7Xn4Lv', walletBalance: 3, isAdmin: false },
+  { email: 'aryan.kumar91@hunter-ticket.com', password: 'R9cM1Tq6Wx', walletBalance: 3, isAdmin: false },
+  { email: 'emmanuel.paravalos73@hunter-ticket.com', password: 'v5Lz8Np2Qk', walletBalance: 3, isAdmin: false },
+  { email: 'yihan.yeung55@hunter-ticket.com', password: 'C3xR7mK9Tb', walletBalance: 3, isAdmin: false },
+  { email: 'gabriela.hernandez53@hunter-ticket.com', password: 'q8Vn4Wz1Lp', walletBalance: 3, isAdmin: false },
+  { email: 'ahnaf.jawad76@hunter-ticket.com', password: 'M2kT9cR6Xv', walletBalance: 3, isAdmin: false },
+  { email: 'jingtong.xu82@hunter-ticket.com', password: 'p7Qx5Ln3Wm', walletBalance: 3, isAdmin: false },
+  { email: 'fiona.li21@hunter-ticket.com', password: 'Y1vK8zP4Rc', walletBalance: 3, isAdmin: false },
+  { email: 'jesus.tiros97@hunter-ticket.com', password: 'n6Tq2Xw9Lb', walletBalance: 3, isAdmin: false },
+  { email: 'aden.zheng18@hunter-ticket.com', password: 'K9mV3cL7Qp', walletBalance: 3, isAdmin: false },
+  { email: 'ahmed.salehin48@hunter-ticket.com', password: 'w4Rz8Nq1Tx', walletBalance: 3, isAdmin: false },
+  { email: 'tahir.rajin95@hunter-ticket.com', password: 'P2bL6vK9Zm', walletBalance: 3, isAdmin: false },
+  { email: 'grace.lee41@hunter-ticket.com', password: 'x7Qn3Wc5Rt', walletBalance: 3, isAdmin: false },
+  { email: 'ariana.palomino83@hunter-ticket.com', password: 'L8mT1zV6Kq', walletBalance: 3, isAdmin: false },
+  { email: 'robiul.sazzad18@hunter-ticket.com', password: 'c5Xw9Np2Rb', walletBalance: 3, isAdmin: false },
+  { email: 'jordi.mendezparis96@hunter-ticket.com', password: 'N4qK7vM1Tz', walletBalance: 3, isAdmin: false },
+  { email: 'samuel.chiquitero67@hunter-ticket.com', password: 't9Lx3Wm8Qc', walletBalance: 3, isAdmin: false },
+  { email: 'imanol.gayosso54@hunter-ticket.com', password: 'B1vP6zR4Kn', walletBalance: 3, isAdmin: false },
+  { email: 'prince.manukure75@hunter-ticket.com', password: 'm8Qx2Tc7Lp', walletBalance: 3, isAdmin: false },
+  { email: 'amir.abdygulov14@hunter-ticket.com', password: 'R3nK9wV5Zq', walletBalance: 3, isAdmin: false },
+  { email: 'jie.ouyang11@hunter-ticket.com', password: 'p6Lz1Xm8Wt', walletBalance: 3, isAdmin: false },
+  { email: 'christian.champagne73@hunter-ticket.com', password: 'K7qC4vN2Rb', walletBalance: 3, isAdmin: false },
+  { email: 'wenrui.liu78@hunter-ticket.com', password: 'z9Tn5Lp1Qx', walletBalance: 3, isAdmin: false },
+  { email: 'douglas.trosten18@hunter-ticket.com', password: 'M4wR8cK6Vq', walletBalance: 3, isAdmin: false },
+  { email: 'oleh.terletskyi61@hunter-ticket.com', password: 'x2Nq7Zp9Lm', walletBalance: 3, isAdmin: false },
+  { email: 'seongjun.an18@hunter-ticket.com', password: 'T5vK1mW8Rc', walletBalance: 3, isAdmin: false },
+  { email: 'shuhua.yu77@hunter-ticket.com', password: 'n9Qx3Lz6Pb', walletBalance: 3, isAdmin: false },
+  { email: 'maha.shabir44@hunter-ticket.com', password: 'B2mV7Rt4Kq', walletBalance: 3, isAdmin: false },
+  { email: 'emily.young24@hunter-ticket.com', password: 'w8Lx5Np1Zc', walletBalance: 3, isAdmin: false },
+  { email: 'kevin.joseph29@hunter-ticket.com', password: 'P6qT2Km9Rv', walletBalance: 3, isAdmin: false },
+  { email: 'santiago.patino47@hunter-ticket.com', password: 'c3Nw8Xz5Lp', walletBalance: 3, isAdmin: false },
+  { email: 'dingling.chen76@hunter-ticket.com', password: 'L9vQ1Tb7Mx', walletBalance: 3, isAdmin: false },
+  { email: 'abdul.adeniji37@hunter-ticket.com', password: 'r4Kz6Wp2Nc', walletBalance: 3, isAdmin: false },
+  { email: 'ziannaalfiya.gallego73@hunter-ticket.com', password: 'Y8mL3Qx9Tv', walletBalance: 3, isAdmin: false },
+  { email: 'test@test.com', password: 'test', walletBalance: 99, isAdmin: false },
+  { email: 'admin@hunter-ticket.com', password: 'adminpass', walletBalance: 5, isAdmin: true },
+]
 
     for (const user of users) {
       const passwordHash = await bcrypt.hash(user.password, 10)
@@ -659,7 +782,7 @@ app.post('/api/admin/seed-database', async (req, res) => {
         INSERT INTO users (email, password_hash, wallet_balance, is_admin)
         VALUES ($1, $2, $3, $4)
         `,
-        [user.email, passwordHash, 5.0, user.isAdmin]
+        [user.email, passwordHash, user.walletBalance ?? 3.0, user.isAdmin]
       )
     }
 
