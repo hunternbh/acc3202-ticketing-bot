@@ -676,7 +676,7 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, async (req, res) =
     FROM audit_logs
     LEFT JOIN users ON users.id = audit_logs.user_id
     ORDER BY audit_logs.created_at DESC
-    LIMIT 200
+    LIMIT 1000
     `
   )
 
@@ -814,9 +814,9 @@ app.post('/api/admin/seed-database', async (req, res) => {
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Early Bird Ticket', $2, 0, 0, 0, TRUE),
-        ($1, 'Pre-General Ticket', $2, 0, 0, 0, FALSE),
-        ($1, 'General Admission Ticket', $2, 0, 0, 0, FALSE)
+        ($1, 'Early Bird Ticket', $2, 100, 0, 0, TRUE),
+        ($1, 'Pre-General Ticket', $2, 100, 0, 0, FALSE),
+        ($1, 'General Admission Ticket', $2, 100, 0, 0, FALSE)
         `,
         [eventId, price]
     )
