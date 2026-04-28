@@ -46,20 +46,22 @@ async function run() {
   }
 
   for (const event of events) {
-    const eventId = event[0]
+  const eventId = event[0]
 
-    await query(
-      `
-      INSERT INTO ticket_types
-        (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
-      VALUES
-        ($1, 'Early Bird Ticket', 1.00, 5, 5, 0, TRUE),
-        ($1, 'Pre-General Ticket', 2.00, 10, 0, 0, FALSE),
-        ($1, 'General Admission Ticket', 3.00, 15, 0, 0, FALSE)
-      `,
-      [eventId]
-    )
-  }
+  const price = eventId === 1 ? 0.00 : 1.00
+
+  await query(
+    `
+    INSERT INTO ticket_types
+      (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
+    VALUES
+      ($1, 'Early Bird Ticket', $2, 0, 0, 0, TRUE),
+      ($1, 'Pre-General Ticket', $2, 0, 0, 0, FALSE),
+      ($1, 'General Admission Ticket', $2, 0, 0, 0, FALSE)
+    `,
+    [eventId, price]
+  )
+}
 
   console.log('Database seeded successfully.')
   process.exit(0)

@@ -506,23 +506,34 @@ app.post('/api/purchase', authRequired, async (req, res) => {
   }
 })
 
-app.post('/api/admin/release', authRequired, adminRequired, async (req, res) => {
-  const { ticketTypeId, releasedQuantity } = req.body
+app.post('/api/admin/release-more', authRequired, adminRequired, async (req, res) => {
+  const { ticketTypeId, additionalQuantity } = req.body
 
-  if (!ticketTypeId || releasedQuantity === undefined) {
-    return res.status(400).json({ error: 'ticketTypeId and releasedQuantity are required' })
+  if (!ticketTypeId || additionalQuantity === undefined) {
+    return res.status(400).json({
+      error: 'ticketTypeId and additionalQuantity are required',
+    })
   }
 
   const result = await query(
     `
     UPDATE ticket_types
     SET
-      released_quantity = LEAST($1, total_quantity),
+      released_quantity = LEAST(released_quantity + $1, total_quantity),
       is_released = TRUE
     WHERE id = $2
-    RETURNING *
+    RETURNING
+      id,
+      event_id,
+      name,
+      price,
+      total_quantity,
+      released_quantity,
+      sold_quantity,
+      GREATEST(released_quantity - sold_quantity, 0) AS available_quantity,
+      is_released
     `,
-    [Number(releasedQuantity), Number(ticketTypeId)]
+    [Number(additionalQuantity), Number(ticketTypeId)]
   )
 
   const ticket = result.rows[0]
@@ -533,18 +544,30 @@ app.post('/api/admin/release', authRequired, adminRequired, async (req, res) => 
 
   await writeAuditLog({
     userId: req.user.id,
-    action: 'ADMIN_RELEASE_TICKET_WAVE',
+    action: 'ADMIN_RELEASE_MORE_TICKETS',
     eventId: ticket.event_id,
     ticketTypeId: ticket.id,
     success: true,
     metadata: {
-      releasedQuantity: Number(releasedQuantity),
+      additionalQuantity: Number(additionalQuantity),
+      releasedQuantity: Number(ticket.released_quantity),
+      availableQuantity: Number(ticket.available_quantity),
     },
   })
 
   res.json({
     success: true,
-    ticket,
+    ticket: {
+      id: ticket.id,
+      eventId: ticket.event_id,
+      name: ticket.name,
+      price: Number(ticket.price),
+      totalQuantity: Number(ticket.total_quantity),
+      releasedQuantity: Number(ticket.released_quantity),
+      soldQuantity: Number(ticket.sold_quantity),
+      availableQuantity: Number(ticket.available_quantity),
+      isReleased: ticket.is_released,
+    },
   })
 })
 
@@ -659,19 +682,21 @@ app.post('/api/admin/seed-database', async (req, res) => {
     }
 
     for (const event of events) {
-      const eventId = event[0]
+    const eventId = event[0]
 
-      await query(
+    const price = eventId === 1 ? 0.00 : 1.00
+
+    await query(
         `
         INSERT INTO ticket_types
-          (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
+        (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-          ($1, 'Early Bird Ticket', 1.00, 5, 5, 0, TRUE),
-          ($1, 'Pre-General Ticket', 2.00, 10, 0, 0, FALSE),
-          ($1, 'General Admission Ticket', 3.00, 15, 0, 0, FALSE)
+        ($1, 'Early Bird Ticket', $2, 0, 0, 0, TRUE),
+        ($1, 'Pre-General Ticket', $2, 0, 0, 0, FALSE),
+        ($1, 'General Admission Ticket', $2, 0, 0, 0, FALSE)
         `,
-        [eventId]
-      )
+        [eventId, price]
+    )
     }
 
     res.json({ success: true, message: 'Database seeded successfully.' })
@@ -679,6 +704,46 @@ app.post('/api/admin/seed-database', async (req, res) => {
     console.error(error)
     res.status(500).json({ error: 'Database seed failed', detail: error.message })
   }
+})
+
+app.get('/api/admin/ticket-types', authRequired, adminRequired, async (req, res) => {
+  const result = await query(
+    `
+    SELECT
+      events.id AS event_id,
+      events.title AS event_title,
+      ticket_types.id AS ticket_type_id,
+      ticket_types.name AS ticket_type,
+      ticket_types.price,
+      ticket_types.total_quantity,
+      ticket_types.released_quantity,
+      ticket_types.sold_quantity,
+      GREATEST(ticket_types.released_quantity - ticket_types.sold_quantity, 0) AS available_quantity,
+      ticket_types.is_released
+    FROM ticket_types
+    JOIN events
+      ON events.id = ticket_types.event_id
+    ORDER BY
+      events.id,
+      ticket_types.price,
+      ticket_types.id
+    `
+  )
+
+  res.json(
+    result.rows.map((row) => ({
+      eventId: row.event_id,
+      eventTitle: row.event_title,
+      ticketTypeId: row.ticket_type_id,
+      ticketType: row.ticket_type,
+      price: Number(row.price),
+      totalQuantity: Number(row.total_quantity),
+      releasedQuantity: Number(row.released_quantity),
+      soldQuantity: Number(row.sold_quantity),
+      availableQuantity: Number(row.available_quantity),
+      isReleased: row.is_released,
+    }))
+  )
 })
 
 app.listen(PORT, () => {

@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SiteHeader from '../components/SiteHeader.vue'
 
@@ -123,7 +123,7 @@ const events = [
   {
     id: 1,
     title: 'Hunter X One',
-    image: '/hunter-1.png',
+    image: `${import.meta.env.BASE_URL}hunter-1.png`,
     tagline: 'Precision. Timing. Control.',
     date: 'Friday, Apr 25, 2026',
     doors: '1:00 PM',
@@ -134,7 +134,7 @@ const events = [
   {
     id: 2,
     title: 'Hunter X Two',
-    image: '/hunter-2.png',
+    image: `${import.meta.env.BASE_URL}hunter-2.png`,
     tagline: 'A guided tour through transaction flow.',
     date: 'Friday, Apr 25, 2026',
     doors: '2:00 PM',
@@ -145,7 +145,7 @@ const events = [
   {
     id: 3,
     title: 'Hunter X Three',
-    image: '/hunter-3.png',
+    image: `${import.meta.env.BASE_URL}hunter-3.png`,
     tagline: 'Rhythm. Repetition. Detection.',
     date: 'Friday, Apr 25, 2026',
     doors: '3:00 PM',
@@ -156,7 +156,7 @@ const events = [
   {
     id: 4,
     title: 'Hunter X Four',
-    image: '/hunter-4.png',
+    image: `${import.meta.env.BASE_URL}hunter-4.png`,
     tagline: 'One carousel. Many transaction cycles.',
     date: 'Friday, Apr 25, 2026',
     doors: '4:00 PM',
@@ -167,7 +167,7 @@ const events = [
   {
     id: 5,
     title: 'Hunter X Five',
-    image: '/hunter-5.png',
+    image: `${import.meta.env.BASE_URL}hunter-5.png`,
     tagline: 'A classroom simulation of fraud testing.',
     date: 'Friday, Apr 25, 2026',
     doors: '5:00 PM',
@@ -182,36 +182,19 @@ const event = computed(() => {
   return events.find((item) => item.id === id)
 })
 
-const tickets = reactive([
-  {
-    id: 1,
-    name: 'Early Bird Ticket',
-    price: 1,
-    quantity: 0,
-    soldOut: true,
-  },
-  {
-    id: 2,
-    name: 'Pre-General Ticket',
-    price: 2,
-    quantity: 0,
-    soldOut: false,
-  },
-  {
-    id: 3,
-    name: 'General Admission Ticket',
-    price: 3,
-    quantity: 0,
-    soldOut: false,
-  },
-])
+const tickets = ref([])
+const loadingTickets = ref(false)
+const ticketError = ref('')
 
 const totalQuantity = computed(() => {
-  return tickets.reduce((sum, ticket) => sum + ticket.quantity, 0)
+  return tickets.value.reduce((sum, ticket) => sum + ticket.quantity, 0)
 })
-
 function increment(ticket) {
-  ticket.quantity += 1
+  if (ticket.soldOut) return
+
+  if (ticket.quantity < ticket.availableQuantity) {
+    ticket.quantity += 1
+  }
 }
 
 function decrement(ticket) {
@@ -220,11 +203,53 @@ function decrement(ticket) {
   }
 }
 
+async function loadTickets() {
+  loadingTickets.value = true
+  ticketError.value = ''
+
+  try {
+    const API_BASE =
+      import.meta.env.VITE_API_BASE_URL || 'https://acc3202-ticketing-bot.onrender.com'
+
+    const response = await fetch(`${API_BASE}/api/events/${route.params.id}/tickets`)
+    const data = await response.json()
+
+    if (!response.ok) {
+      ticketError.value = data.error || 'Could not load tickets.'
+      return
+    }
+
+    tickets.value = data.tickets.map((ticket) => ({
+      id: ticket.id,
+      name: ticket.name,
+      price: ticket.price,
+      quantity: 0,
+      soldOut: ticket.soldOut,
+      availableQuantity: ticket.availableQuantity,
+      isReleased: ticket.isReleased,
+    }))
+  } catch (error) {
+    ticketError.value = 'Could not connect to the ticket server.'
+  } finally {
+    loadingTickets.value = false
+  }
+}
+
+onMounted(loadTickets)
+
+watch(
+  () => route.params.id,
+  () => {
+    loadTickets()
+  }
+)
+
 function addToCart() {
-  const selectedTickets = tickets
+  const selectedTickets = tickets.value
     .filter((ticket) => ticket.quantity > 0)
     .map((ticket) => ({
       id: ticket.id,
+      ticketTypeId: ticket.id,
       name: ticket.name,
       price: ticket.price,
       quantity: ticket.quantity,
@@ -245,15 +270,7 @@ function addToCart() {
   router.push('/cart')
 }
 
-/* reset quantities when switching from /events/1 to /events/2 */
-watch(
-  () => route.params.id,
-  () => {
-    tickets.forEach((ticket) => {
-      ticket.quantity = 0
-    })
-  }
-)
+
 </script>
 
 <style scoped>
