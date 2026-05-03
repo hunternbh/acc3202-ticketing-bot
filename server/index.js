@@ -814,9 +814,9 @@ app.post('/api/admin/seed-database', async (req, res) => {
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Early Bird Ticket', $2, 100, 0, 0, TRUE),
-        ($1, 'Pre-General Ticket', $2, 100, 0, 0, FALSE),
-        ($1, 'General Admission Ticket', $2, 100, 0, 0, FALSE)
+        ($1, 'Early Bird Ticket', $2, 99999, 0, 0, TRUE),
+        ($1, 'Pre-General Ticket', $2, 99999, 0, 0, FALSE),
+        ($1, 'General Admission Ticket', $2, 99999, 0, 0, FALSE)
         `,
         [eventId, price]
     )
