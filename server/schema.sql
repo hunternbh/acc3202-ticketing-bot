@@ -30,7 +30,9 @@ CREATE TABLE ticket_types (
   total_quantity INTEGER NOT NULL,
   released_quantity INTEGER NOT NULL DEFAULT 0,
   sold_quantity INTEGER NOT NULL DEFAULT 0,
-  is_released BOOLEAN NOT NULL DEFAULT FALSE
+  is_released BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE purchases (
