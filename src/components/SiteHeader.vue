@@ -9,7 +9,7 @@
 
     <div class="main-header">
       <div class="nav-row">
-        <RouterLink to="/" class="brand">Hunter's Ticket</RouterLink>
+        <RouterLink to="/" class="brand">SeatGate</RouterLink>
 
         <nav class="nav-links">
           <RouterLink to="/concerts">Concerts</RouterLink>
@@ -72,7 +72,7 @@
             />
 
             <div v-if="showSearchTip" class="search-tip">
-              Only Hunter is allowed.
+              Only SeatGate is allowed.
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ function logout() {
 function runSearch() {
   const normalizedSearch = searchTerm.value.trim().toLowerCase()
 
-  if (normalizedSearch && normalizedSearch !== 'hunter') {
+  if (normalizedSearch && normalizedSearch !== 'seatgate') {
     showSearchTip.value = true
     router.push('/concerts')
     return

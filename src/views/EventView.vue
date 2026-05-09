@@ -49,7 +49,7 @@
   <p>{{ event.description }}</p>
 
   <ul>
-    <li>General admission access to the selected Hunter X event.</li>
+    <li>General admission access to the selected SeatGate X event.</li>
     <li>Live performance experience at the listed New York City venue.</li>
     <li>Doors open before the scheduled event time shown above.</li>
     <li>Tickets are available in limited quantities and may sell out before checkout.</li>
@@ -122,58 +122,57 @@ const router = useRouter()
 const events = [
   {
     id: 1,
-    title: 'Hunter X One',
-    image: `${import.meta.env.BASE_URL}hunter-1.png`,
+    title: 'SeatGate X Trial',
+    image: `${import.meta.env.BASE_URL}seatgate-1.png`,
     tagline: 'Precision. Timing. Control.',
     date: 'Friday, Apr 25, 2026',
     doors: '1:00 PM',
     venue: 'Audit Control Theatre',
     description:
-      'Hunter X One is a ballet performance built around precision, timing, and controlled movement. The event is used in the lab to discuss authorization, sequencing, and evidence trails in a high-volume ticketing system.',
+      'SeatGate X Trial is a ballet performance built around precision, timing, and controlled movement. The event is used in the lab to discuss authorization, sequencing, and evidence trails in a high-volume ticketing system.',
   },
   {
     id: 2,
-    title: 'Hunter X Two',
-    image: `${import.meta.env.BASE_URL}hunter-2.png`,
-    tagline: 'A guided tour through transaction flow.',
+    title: 'SeatGate X One',
+    image: `${import.meta.env.BASE_URL}seatgate-2.png`,
     date: 'Friday, Apr 25, 2026',
     doors: '2:00 PM',
     venue: 'Revenue Recognition Hall',
     description:
-      'Hunter X Two is a food tour through a fast-moving marketplace. Each stop represents a transaction point: purchase, payment, delivery, refund, and reconciliation.',
+      'SeatGate X One is a food tour through a fast-moving marketplace. Each stop represents a transaction point: purchase, payment, delivery, refund, and reconciliation.',
   },
   {
     id: 3,
-    title: 'Hunter X Three',
-    image: `${import.meta.env.BASE_URL}hunter-3.png`,
+    title: 'SeatGate X Two',
+    image: `${import.meta.env.BASE_URL}seatgate-3.png`,
     tagline: 'Rhythm. Repetition. Detection.',
     date: 'Friday, Apr 25, 2026',
     doors: '3:00 PM',
     venue: 'Bot Detection Center',
     description:
-      'Hunter X Three is a Chinese traditional lion dance performance. It is used to frame abnormal traffic patterns, repeated requests, and bot-detection controls.',
+      'SeatGate X Two is a Chinese traditional lion dance performance. It is used to frame abnormal traffic patterns, repeated requests, and bot-detection controls.',
   },
   {
     id: 4,
-    title: 'Hunter X Four',
-    image: `${import.meta.env.BASE_URL}hunter-4.png`,
+    title: 'SeatGate X Three',
+    image: `${import.meta.env.BASE_URL}seatgate-4.png`,
     tagline: 'One carousel. Many transaction cycles.',
     date: 'Friday, Apr 25, 2026',
     doors: '4:00 PM',
     venue: 'Central Park Carousel',
     description:
-      'Hunter X Four is a carousel ride in Central Park. Its repeated cycles mirror ticket sale, transfer, refund, and resale activity.',
+      'SeatGate X Three is a carousel ride in Central Park. Its repeated cycles mirror ticket sale, transfer, refund, and resale activity.',
   },
   {
     id: 5,
-    title: 'Hunter X Five',
-    image: `${import.meta.env.BASE_URL}hunter-5.png`,
+    title: 'SeatGate X Final',
+    image: `${import.meta.env.BASE_URL}seatgate-5.png`,
     tagline: 'A classroom simulation of fraud testing.',
     date: 'Friday, Apr 25, 2026',
     doors: '5:00 PM',
     venue: 'ACC3202 Classroom Simulation',
     description:
-      'Hunter X Five is a classroom simulation where students act as auditors of a ticketing platform. The exercise focuses on fraud testing, internal controls, audit logs, and automated scripts.',
+      'SeatGate X Final is a classroom simulation where students act as auditors of a ticketing platform. The exercise focuses on fraud testing, internal controls, audit logs, and automated scripts.',
   },
 ]
 

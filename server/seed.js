@@ -7,12 +7,12 @@ async function run() {
   await query(schema)
 
   const users = [
-    { email: 'student01@hunter-ticket.com', password: 'pass01', isAdmin: false },
-    { email: 'student02@hunter-ticket.com', password: 'pass02', isAdmin: false },
-    { email: 'student03@hunter-ticket.com', password: 'pass03', isAdmin: false },
-    { email: 'student04@hunter-ticket.com', password: 'pass04', isAdmin: false },
-    { email: 'student05@hunter-ticket.com', password: 'pass05', isAdmin: false },
-    { email: 'admin@hunter-ticket.com', password: 'adminpass', isAdmin: true },
+    { email: 'student01@seatgate-ticket.com', password: 'pass01', isAdmin: false },
+    { email: 'student02@seatgate-ticket.com', password: 'pass02', isAdmin: false },
+    { email: 'student03@seatgate-ticket.com', password: 'pass03', isAdmin: false },
+    { email: 'student04@seatgate-ticket.com', password: 'pass04', isAdmin: false },
+    { email: 'student05@seatgate-ticket.com', password: 'pass05', isAdmin: false },
+    { email: 'admin@seatgate-ticket.com', password: 'adminpass', isAdmin: true },
   ]
 
   for (const user of users) {
@@ -28,11 +28,11 @@ async function run() {
   }
 
   const events = [
-    [1, 'Hunter X One', 'Audit Control Theatre', 'Friday, Apr 25, 2026', 'hunter-1.png'],
-    [2, 'Hunter X Two', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'hunter-2.png'],
-    [3, 'Hunter X Three', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'hunter-3.png'],
-    [4, 'Hunter X Four', 'Central Park Carousel', 'Friday, Apr 25, 2026', 'hunter-4.png'],
-    [5, 'Hunter X Five', 'ACC3202 Classroom Simulation', 'Friday, Apr 25, 2026', 'hunter-5.png'],
+    [1, 'SeatGate X Trial', 'Audit Control Theatre', 'Friday, Apr 25, 2026', 'seatgate-1.png'],
+    [2, 'SeatGate X One', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'seatgate-2.png'],
+    [3, 'SeatGate X Two', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'seatgate-3.png'],
+    [4, 'SeatGate X Three', 'Central Park Carousel', 'Friday, Apr 25, 2026', 'seatgate-4.png'],
+    [5, 'SeatGate X Final', 'ACC3202 Classroom Simulation', 'Friday, Apr 25, 2026', 'seatgate-5.png'],
   ]
 
   for (const event of events) {

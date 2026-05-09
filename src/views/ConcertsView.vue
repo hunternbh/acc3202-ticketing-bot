@@ -12,7 +12,7 @@
         <div class="blue-rule"></div>
 
         <p class="intro">
-          Explore the Hunter X event series. Hover over each event to preview the performance,
+          Explore the SeatGate X event series. Hover over each event to preview the performance,
           then click to open the ticketing page. These events will later become the sandbox
           environment for testing fraud risks, bot behavior, and audit trails.
         </p>
@@ -34,7 +34,7 @@
 
         <section class="events-section">
           <div class="section-marker"></div>
-          <h2 class="section-title">HUNTER X EVENTS</h2>
+          <h2 class="section-title">SEATGATE X EVENTS</h2>
 
           <div class="event-grid">
             <article
@@ -72,53 +72,53 @@ const router = useRouter()
 const events = [
   {
     id: 1,
-    title: 'Hunter X One',
-    image: `${import.meta.env.BASE_URL}hunter-1.png`,
+    title: 'SeatGate X Trial',
+    image: `${import.meta.env.BASE_URL}seatgate-1.png`,
     date: 'Apr 25 · Sat · 1:00 PM',
     venue: 'Audit Control Theatre',
     shortVenue: 'Audit Control Theatre',
     description:
-      'Hunter X One is a ballet performance built around precision, timing, and controlled movement. In the audit version of the lab, it represents the importance of sequence, authorization, and clean evidence trails in a high-volume ticketing system.',
+      'SeatGate X Trial is a ballet performance built around precision, timing, and controlled movement. In the audit version of the lab, it represents the importance of sequence, authorization, and clean evidence trails in a high-volume ticketing system.',
   },
   {
     id: 2,
-    title: 'Hunter X Two',
-    image: `${import.meta.env.BASE_URL}hunter-2.png`,
+    title: 'SeatGate X One',
+    image: `${import.meta.env.BASE_URL}seatgate-2.png`,
     date: 'Apr 25 · Sat · 2:00 PM',
     venue: 'Revenue Recognition Hall',
     shortVenue: 'Revenue Recognition Hall',
     description:
-      'Hunter X Two is a guided food tour through a fast-moving marketplace. Each stop mirrors a transaction point: order, payment, delivery, refund, and reconciliation. Students will later use this event to test whether the system records transactions accurately.',
+      'SeatGate X One is a guided food tour through a fast-moving marketplace. Each stop mirrors a transaction point: order, payment, delivery, refund, and reconciliation. Students will later use this event to test whether the system records transactions accurately.',
   },
   {
     id: 3,
-    title: 'Hunter X Three',
-    image: `${import.meta.env.BASE_URL}hunter-3.png`,
+    title: 'SeatGate X Two',
+    image: `${import.meta.env.BASE_URL}seatgate-3.png`,
     date: 'Apr 25 · Sat · 3:00 PM',
     venue: 'Bot Detection Center',
     shortVenue: 'Bot Detection Center',
     description:
-      'Hunter X Three is a Chinese traditional lion dance performance focused on rhythm, coordination, and crowd movement. In the audit lab, this event is used to study abnormal traffic patterns, repeated requests, and whether the platform can identify bot-like behavior.',
+      'SeatGate X Two is a Chinese traditional lion dance performance focused on rhythm, coordination, and crowd movement. In the audit lab, this event is used to study abnormal traffic patterns, repeated requests, and whether the platform can identify bot-like behavior.',
   },
   {
     id: 4,
-    title: 'Hunter X Four',
-    image: `${import.meta.env.BASE_URL}hunter-4.png`,
+    title: 'SeatGate X Three',
+    image: `${import.meta.env.BASE_URL}seatgate-4.png`,
     date: 'Apr 25 · Sat · 4:00 PM',
     venue: 'Central Park Carousel',
     shortVenue: 'Central Park Carousel',
     description:
-      'Hunter X Four is a carousel ride in Central Park. The circular motion reflects repeated transaction cycles: listing, purchase, transfer, refund, and resale. This event is useful for examining duplicate sales and improper refund attempts.',
+      'SeatGate X Three is a carousel ride in Central Park. The circular motion reflects repeated transaction cycles: listing, purchase, transfer, refund, and resale. This event is useful for examining duplicate sales and improper refund attempts.',
   },
   {
     id: 5,
-    title: 'Hunter X Five',
-    image: `${import.meta.env.BASE_URL}hunter-5.png`,
+    title: 'SeatGate X Final',
+    image: `${import.meta.env.BASE_URL}seatgate-5.png`,
     date: 'Apr 25 · Sat · 5:00 PM',
     venue: 'ACC3202 Classroom Simulation',
     shortVenue: 'ACC3202 Simulation',
     description:
-      'Hunter X Five is a classroom simulation where students act as auditors of a ticketing platform. The event focuses on fraud testing, internal controls, audit logs, and whether automated scripts can expose weaknesses in the system.',
+      'SeatGate X Final is a classroom simulation where students act as auditors of a ticketing platform. The event focuses on fraud testing, internal controls, audit logs, and whether automated scripts can expose weaknesses in the system.',
   },
 ]
 

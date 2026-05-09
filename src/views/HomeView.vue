@@ -7,7 +7,7 @@
       <div class="hero-overlay"></div>
 
       <div class="hero-text">
-        <h2>Hunter One</h2>
+        <h2>SeatGate Trial</h2>
         <p>Three Guys, Two Scores, One Magical Performance.</p>
         <button @click="goTickets">Find Tickets</button>
       </div>

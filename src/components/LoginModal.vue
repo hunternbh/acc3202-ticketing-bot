@@ -13,7 +13,7 @@
         <input
           v-model="email"
           type="email"
-          placeholder="student01@hunter-ticket.com"
+          placeholder="student01@seatgate-ticket.com"
           autocomplete="email"
         />
 
