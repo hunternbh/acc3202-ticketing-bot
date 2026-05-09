@@ -14,6 +14,8 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 
+app.set('trust proxy', true)
+
 app.use(cors({
   origin: 'https://hunternbh.github.io',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
