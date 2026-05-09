@@ -661,7 +661,8 @@ app.get('/api/admin/holdings', authRequired, adminRequired, async (req, res) => 
       events.title AS event_title,
       ticket_types.name AS ticket_type,
       SUM(purchase_items.quantity) AS quantity_owned,
-      SUM(purchase_items.quantity * purchase_items.unit_price) AS amount_spent
+      SUM(purchase_items.quantity * purchase_items.unit_price) AS amount_spent,
+      MAX(purchases.created_at) AS last_purchase_at
     FROM users
     LEFT JOIN purchases
       ON purchases.user_id = users.id
