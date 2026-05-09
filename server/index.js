@@ -6,6 +6,12 @@ import jwt from 'jsonwebtoken'
 import { query, getClient } from './db.js'
 import fs from 'fs'
 
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
 
 app.use(cors({
@@ -15,6 +21,10 @@ app.use(cors({
 }))
 
 app.use(express.json())
+
+// Serve static files from the 'dist' directory
+const distPath = path.join(__dirname, '../dist')
+app.use(express.static(distPath))
 
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
@@ -881,6 +891,11 @@ app.get('/api/admin/ticket-types', authRequired, adminRequired, async (req, res)
       isReleased: row.is_released,
     }))
   )
+})
+
+// Support SPA routing: redirect all non-API requests to index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'))
 })
 
 app.listen(PORT, () => {
