@@ -49,6 +49,8 @@ function rateLimit({
           windowMs,
           recentCount: recent.length,
         },
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
       })
 
       return res.status(429).json({
@@ -178,15 +180,17 @@ async function writeAuditLog({
   ticketTypeId = null,
   success,
   metadata = {},
+  ip = null,
+  userAgent = null,
 }) {
   await query(
     `
     INSERT INTO audit_logs
-      (user_id, action, event_id, ticket_type_id, success, metadata)
+      (user_id, action, event_id, ticket_type_id, success, metadata, ip_address, user_agent)
     VALUES
-      ($1, $2, $3, $4, $5, $6)
+      ($1, $2, $3, $4, $5, $6, $7, $8)
     `,
-    [userId, action, eventId, ticketTypeId, success, metadata]
+    [userId, action, eventId, ticketTypeId, success, metadata, ip, userAgent]
   )
 }
 
@@ -217,6 +221,8 @@ app.post('/api/login', async (req, res) => {
       action: 'LOGIN_FAILED',
       success: false,
       metadata: { email, reason: 'unknown_email' },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     })
 
     return res.status(401).json({ error: 'Invalid email or password' })
@@ -230,6 +236,8 @@ app.post('/api/login', async (req, res) => {
       action: 'LOGIN_FAILED',
       success: false,
       metadata: { email, reason: 'bad_password' },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     })
 
     return res.status(401).json({ error: 'Invalid email or password' })
@@ -240,6 +248,8 @@ app.post('/api/login', async (req, res) => {
     action: 'LOGIN_SUCCESS',
     success: true,
     metadata: { email },
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
   })
 
   const token = createToken(user)
@@ -478,11 +488,11 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
 
     const purchaseResult = await client.query(
       `
-      INSERT INTO purchases (user_id, event_id, total_amount, status)
-      VALUES ($1, $2, $3, 'SUCCESS')
+      INSERT INTO purchases (user_id, event_id, total_amount, status, ip_address, user_agent)
+      VALUES ($1, $2, $3, 'SUCCESS', $4, $5)
       RETURNING id, created_at
       `,
-      [req.user.id, eventId, total]
+      [req.user.id, eventId, total, req.ip, req.headers['user-agent']]
     )
 
     const purchase = purchaseResult.rows[0]
@@ -532,6 +542,8 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
         items: cleanItems,
         total,
       },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     })
 
     res.json({
@@ -605,6 +617,8 @@ app.post('/api/admin/release-more', authRequired, adminRequired, async (req, res
       releasedQuantity: Number(ticket.released_quantity),
       availableQuantity: Number(ticket.available_quantity),
     },
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
   })
 
   res.json({

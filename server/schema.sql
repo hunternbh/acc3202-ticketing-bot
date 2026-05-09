@@ -40,6 +40,8 @@ CREATE TABLE purchases (
   total_amount NUMERIC(10, 2) NOT NULL,
   status TEXT NOT NULL,
   failure_reason TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -59,5 +61,7 @@ CREATE TABLE audit_logs (
   ticket_type_id INTEGER,
   success BOOLEAN NOT NULL,
   metadata JSONB NOT NULL DEFAULT '{}',
+  ip_address TEXT,
+  user_agent TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
