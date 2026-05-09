@@ -330,6 +330,7 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
       released_quantity,
       sold_quantity,
       is_released,
+      updated_at,
       GREATEST(released_quantity - sold_quantity, 0) AS available_quantity
     FROM ticket_types
     WHERE event_id = $1
@@ -350,6 +351,7 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
       soldQuantity: ticket.sold_quantity,
       availableQuantity: Number(ticket.available_quantity),
       isReleased: ticket.is_released,
+      updatedAt: ticket.updated_at,
       soldOut:
         !ticket.is_released || Number(ticket.available_quantity) <= 0,
     })),
@@ -698,6 +700,8 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, async (req, res) =
       audit_logs.ticket_type_id,
       audit_logs.success,
       audit_logs.metadata,
+      audit_logs.ip_address,
+      audit_logs.user_agent,
       audit_logs.created_at
     FROM audit_logs
     LEFT JOIN users ON users.id = audit_logs.user_id
