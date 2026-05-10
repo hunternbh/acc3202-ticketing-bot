@@ -1,254 +1,363 @@
 # ACC3202 Ticketing Bot: Instructor Command Sheet
 
-Before starting the exercise:
+## Instructional Video
 
-- Event 1 has tickets priced at **$0**.
-- There are then **4 additional events**, each with tickets priced at **$1**.
-- If needed, change the list of users directly in `index.js`.
-- The app may include a cron job that refreshes or pings the Render server every 5 minutes because the free Render server can sleep when inactive.
+Add instructional video link here.
 
-Replace `<filler>` with the actual Render app name used during deployment.
+---
 
-For example, if your Render URL is:
+# Ticketing Bot Exercise Setup Guide
+
+This guide explains how to set up the ticketing bot exercise for an AIS course.
+
+---
+
+## 1. Create or Use a GitHub Account
+
+Go to:
 
 ```text
-https://my-ticketing-app.onrender.com
+https://github.com
 ```
 
-then replace:
+Create an account if you do not already have one.
+
+---
+
+## 2. Fork the Repository
+
+Go to:
 
 ```text
-https://<filler>.onrender.com
+https://github.com/hunternbh/acc3202-ticketing-bot
 ```
 
-with:
+Fork the repository to your own GitHub account.
+
+Give the repository a name you can remember. You will use this name later when changing parts of the code.
+
+---
+
+## 3. Set Up Render
+
+Go to:
 
 ```text
-https://my-ticketing-app.onrender.com
+https://render.com
+```
+
+Create an account if needed.
+
+Render will be used for the server-side setup.
+
+---
+
+## 4. Create a PostgreSQL Database
+
+In Render, create a new PostgreSQL database.
+
+Use any name you like and select the **Free** plan.
+
+The free tier may wind down after a month, but the database can be recreated later.
+
+This database stores the ticket-buying activity.
+
+---
+
+## 5. Create a Web Service
+
+While the database initializes, create a new **Web Service** in Render.
+
+Connect the Web Service to your forked GitHub repository.
+
+Use any name you like.
+
+---
+
+## 6. Configure the Web Service
+
+Set the following values:
+
+```text
+Root Directory: server
+Build Command: npm run build
+Start Command: npm start
 ```
 
 ---
 
-## 1. Reseed the Database
+## 7. Set Environment Variables
 
-This resets and repopulates the database with the starting users, events, ticket types, and balances.
+In Render, set the backend environment variables.
 
-```powershell
-curl.exe -X POST "https://ticketing-exercise.onrender.com/api/admin/seed-database" `
-  -H "x-seed-secret: secret"
+These values are hidden from the frontend.
+
+### DATABASE_URL
+
+Copy the **Internal Database URL** from the Render PostgreSQL database.
+
+Set it as:
+
+```text
+DATABASE_URL
+```
+
+### SEED_SECRET
+
+Set a `SEED_SECRET`.
+
+Remember this value. You will use it later to reset the database.
+
+---
+
+## 8. Update the GitHub Pages Base Path
+
+In GitHub, open:
+
+```text
+vite.config.ts
+```
+
+Change the `base` value to your repository name.
+
+For example, if your repository is named:
+
+```text
+acc3202-ticketing-bot
+```
+
+use:
+
+```ts
+base: "/acc3202-ticketing-bot/"
+```
+
+---
+
+## 9. Create Student Accounts
+
+In GitHub, open:
+
+```text
+server/users.js
+```
+
+Create student accounts.
+
+You can use AI to quickly generate and paste the account list.
+
+Do not use real student names because GitHub repositories may be publicly available for free-tier users.
+
+Keep:
+
+```text
+One test account with a high balance
+One admin account
+```
+
+---
+
+## 10. Deploy with GitHub Pages
+
+In GitHub, go to:
+
+```text
+Settings > Pages
+```
+
+Change the source to:
+
+```text
+GitHub Actions
+```
+
+Then trigger the deploy workflow.
+
+Once the build finishes, your website will be live.
+
+---
+
+## 11. Issue Commands
+
+Use the commands from the guiding text file or from your GitHub repository's README.
+
+If you have restricted access to command-line terminals, you can use:
+
+```text
+https://reqbin.com/curl
+```
+
+---
+
+## 12. Seed the Database
+
+Seed the database first.
+
+Seeding automatically resets all previously bought tickets and releases 999 tickets for the trial event.
+
+You will need your:
+
+```text
+Backend URL
+SEED_SECRET
+```
+
+---
+
+## 13. Log In as Admin
+
+Log in as the admin account to get your token.
+
+Then use the admin token to issue tickets for events.
+
+---
+
+## 14. Show Students the API Purchase Process
+
+To show students how ticket buying works through the API:
+
+1. Open the website.
+2. Open Inspect Tools.
+3. Go to the **Network** tab.
+4. Log in as a user.
+5. Observe the login request.
+6. Make a ticket purchase.
+7. Observe the purchase request.
+
+When students log in, the server generates a token for the user.
+
+When the browser confirms a purchase, it sends a `POST` request with the user's token.
+
+A bot can repeat this API call.
+
+Students can use AI to write Python code that repeats the request in this sandboxed system.
+
+After this demonstration, proceed to analyzing the internal controls with students.
+
+---
+
+# Ticketing Exercise Commands for ReqBin cURL
+
+Use this site:
+
+```text
+https://reqbin.com/curl
+```
+
+These commands are written as **one-line cURL commands** for ReqBin.
+
+If ReqBin says too many commands have been issued, open an incognito tab and try again.
+
+---
+
+## Backend URL
+
+```text
+https://acc3202-ticketing-bot.onrender.com
+```
+
+---
+
+## Default Values
+
+```text
+SEED_SECRET: hunter-seed-2026-private
+Admin email: admin@seatgate-ticket.com
+Admin password: adminpass
+```
+
+---
+
+## Before Starting
+
+- Event 1 has tickets priced at **$0**.
+- Events 2–5 have tickets priced at **$1 each**.
+- Change the user list in `index.js` before reseeding.
+- The GitHub cron job pings the Render app every 5 minutes because the free Render server may sleep.
+- These commands are written for **ReqBin cURL**, not Windows CMD and not PowerShell.
+- Paste each command into ReqBin’s cURL command box.
+
+---
+
+## 1. Reseed Database
+
+This clears and reseeds the database using the user list currently defined in `index.js`.
+
+```bash
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/admin/seed-database" -H "x-seed-secret: hunter-seed-2026-private"
 ```
 
 ---
 
 ## 2. Login as Admin
 
-This logs in as the admin user and saves the admin token.
-
-```powershell
-$response = Invoke-RestMethod `
-  -Uri "https://<filler>.onrender.com/api/login" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"email":"admin@hunter-ticket.com","password":"adminpass"}'
-
-$token = $response.token
+```bash
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"email":"admin@seatgate-ticket.com","password":"adminpass"}'
 ```
 
----
+The command should return something like this:
 
-## 3. Admin: Release More Tickets
-
-This releases additional tickets for a selected ticket type.
-
-In the example below:
-
-- `ticketTypeId` is `5`
-- `additionalQuantity` is `10`
-
-```powershell
-Invoke-RestMethod `
-  -Uri "https://<filler>.onrender.com/api/admin/release-more" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body '{"ticketTypeId":5,"additionalQuantity":10}'
-```
-
----
-
-## 4. Admin: Check Holdings
-
-This shows what each user owns, their wallet balance, and how much they spent.
-
-```powershell
-Invoke-RestMethod `
-  -Uri "https://<filler>.onrender.com/api/admin/holdings" `
-  -Method GET `
-  -Headers @{ Authorization = "Bearer $token" } |
-Format-Table email, wallet_balance, event_title, ticket_type, quantity_owned, amount_spent -AutoSize
-```
-
----
-
-## 5. Public: Check Tickets for an Event
-
-This checks the ticket status for a public event page.
-
-In the example below, the event ID is `2`.
-
-```powershell
-Invoke-RestMethod `
-  -Uri "https://<filler>.onrender.com/api/events/2/tickets" `
-  -Method GET |
-Select-Object -ExpandProperty tickets |
-Format-List *
-```
-
----
-
-# Student Bot Program
-
-This program logs in as a student, repeatedly checks whether a ticket is available, and buys one ticket once available.
-
----
-
-## 1. Login as a Student User
-
-```powershell
-$response = Invoke-RestMethod `
-  -Uri "https://<filler>.onrender.com/api/login" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"email":"test@test.com","password":"test"}'
-
-$token = $response.token
-```
-
----
-
-## 2. Choose an Event
-
-Change the event ID if needed.
-
-```powershell
-$eventId = 5
-```
-
----
-
-## 3. Run the Bot Loop
-
-The bot checks every 500 milliseconds until a ticket is available.
-
-```powershell
-while ($true) {
-  $ticketInfo = Invoke-RestMethod `
-    -Uri "https://<filler>.onrender.com/api/events/$eventId/tickets" `
-    -Method GET
-
-  $availableTicket = $ticketInfo.tickets |
-    Where-Object { $_.isReleased -eq $true -and $_.availableQuantity -gt 0 } |
-    Select-Object -First 1
-
-  if ($availableTicket) {
-    Write-Host "Ticket found!"
-    Write-Host "Ticket Type ID:" $availableTicket.id
-    Write-Host "Price:" $availableTicket.price
-
-    $body = @{
-      eventId = $eventId
-      items = @(
-        @{
-          ticketTypeId = $availableTicket.id
-          quantity = 1
-        }
-      )
-    } | ConvertTo-Json -Depth 5
-
-    $purchase = Invoke-RestMethod `
-      -Uri "https://<filler>.onrender.com/api/purchase" `
-      -Method POST `
-      -ContentType "application/json" `
-      -Headers @{ Authorization = "Bearer $token" } `
-      -Body $body
-
-    Write-Host "Purchase complete!"
-    $purchase
-    break
-  }
-
-  Write-Host "No ticket yet. Checking again..."
-  Start-Sleep -Milliseconds 500
+```json
+{
+  "token": "eyJhbGciOi..."
 }
 ```
 
----
+Copy the token value only, without the quotation marks.
 
-# Full Student Bot Script
+You will need to paste that token into the commands below where it says:
 
-Use this if you want the full student bot in one block.
-
-```powershell
-# Login as a student user
-$response = Invoke-RestMethod `
-  -Uri "https://<filler>.onrender.com/api/login" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"email":"test@test.com","password":"test"}'
-
-$token = $response.token
-
-# Choose event
-$eventId = 5
-
-# Bot loop: keep checking until ticket is available
-while ($true) {
-  $ticketInfo = Invoke-RestMethod `
-    -Uri "https://<filler>.onrender.com/api/events/$eventId/tickets" `
-    -Method GET
-
-  $availableTicket = $ticketInfo.tickets |
-    Where-Object { $_.isReleased -eq $true -and $_.availableQuantity -gt 0 } |
-    Select-Object -First 1
-
-  if ($availableTicket) {
-    Write-Host "Ticket found!"
-    Write-Host "Ticket Type ID:" $availableTicket.id
-    Write-Host "Price:" $availableTicket.price
-
-    $body = @{
-      eventId = $eventId
-      items = @(
-        @{
-          ticketTypeId = $availableTicket.id
-          quantity = 1
-        }
-      )
-    } | ConvertTo-Json -Depth 5
-
-    $purchase = Invoke-RestMethod `
-      -Uri "https://<filler>.onrender.com/api/purchase" `
-      -Method POST `
-      -ContentType "application/json" `
-      -Headers @{ Authorization = "Bearer $token" } `
-      -Body $body
-
-    Write-Host "Purchase complete!"
-    $purchase
-    break
-  }
-
-  Write-Host "No ticket yet. Checking again..."
-  Start-Sleep -Milliseconds 500
-}
+```text
+PASTE_TOKEN_HERE
 ```
 
 ---
 
-# Notes
+## 3. Release More Tickets
 
-- Replace `<filler>` with the actual Render app name.
-- Replace the seed secret if your deployed app uses a different `SEED_SECRET`.
-- Replace the student login credentials if you changed the user list in `index.js`.
-- Replace `$eventId = 5` if students should target a different event.
-- Replace `ticketTypeId = 5` if the instructor wants to release a different ticket type.
+This releases 10 more tickets for `ticketTypeId = 5`.
+
+```bash
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/admin/release-more" -H "Content-Type: application/json" -H "Authorization: Bearer PASTE_TOKEN_HERE" -d '{"ticketTypeId":5,"additionalQuantity":10}'
+```
+
+To release a different number of tickets, change `additionalQuantity`.
+
+Example: release 25 more tickets.
+
+```bash
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/admin/release-more" -H "Content-Type: application/json" -H "Authorization: Bearer PASTE_TOKEN_HERE" -d '{"ticketTypeId":5,"additionalQuantity":25}'
+```
+
+---
+
+## 4. Check Holdings
+
+This shows student holdings, wallet balances, ticket ownership, and amount spent.
+
+```bash
+curl -X GET "https://acc3202-ticketing-bot.onrender.com/api/admin/holdings" -H "Authorization: Bearer PASTE_TOKEN_HERE"
+```
+
+---
+
+## 5. Important Notes
+
+- These are **ReqBin cURL** commands.
+- Do not use CMD variables such as `%BASE_URL%`.
+- Do not use PowerShell variables such as `$token`.
+- After logging in, copy the token and replace:
+
+```text
+PASTE_TOKEN_HERE
+```
+
+with the actual token.
+
+- If login fails, check whether the admin email in `index.js` is:
+
+```text
+admin@seatgate-ticket.com
+```
+
+Use the email that appears in your seed data.

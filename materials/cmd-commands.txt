@@ -1,0 +1,228 @@
+# Ticketing Exercise Commands for CMD
+
+Backend URL:
+
+```text
+https://acc3202-ticketing-bot.onrender.com
+```
+
+Default values:
+
+```text
+SEED_SECRET: hunter-seed-2026-private
+Admin email: admin@hunter-ticket.com
+Admin password: adminpass
+```
+
+---
+
+## Before Starting
+
+- Event 1 has tickets priced at **$0**.
+- Events 2–5 have tickets priced at **$1 each**.
+- Change the user list in `index.js` before reseeding.
+- The GitHub cron job pings the Render app every 5 minutes because the free Render server may sleep.
+- These commands are written for **Windows CMD**, not PowerShell.
+
+---
+
+## 0. Set Backend URL
+
+Run this first in CMD:
+
+```bat
+set BASE_URL=https://acc3202-ticketing-bot.onrender.com
+```
+
+---
+
+## 1. Reseed Database
+
+This clears and reseeds the database using the user list currently defined in `index.js`.
+
+```bat
+curl.exe -X POST "%BASE_URL%/api/admin/seed-database" ^
+  -H "x-seed-secret: hunter-seed-2026-private"
+```
+
+---
+
+## 2. Login as Admin
+
+```bat
+curl.exe -X POST "%BASE_URL%/api/login" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"admin@seatgate-ticket.com\",\"password\":\"adminpass\"}"
+```
+
+The command should return something like this:
+
+```json
+{
+  "token": "eyJhbGciOi..."
+}
+```
+
+Copy the token value only, without the quotation marks.
+
+Then run:
+
+```bat
+set TOKEN=paste_token_here
+```
+
+Example:
+
+```bat
+set TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+## 3. Release More Tickets
+
+This releases 10 more tickets for `ticketTypeId = 5`.
+
+```bat
+curl.exe -X POST "%BASE_URL%/api/admin/release-more" ^
+  -H "Content-Type: application/json" ^
+  -H "Authorization: Bearer %TOKEN%" ^
+  -d "{\"ticketTypeId\":5,\"additionalQuantity\":10}"
+```
+
+To release a different number of tickets, change `additionalQuantity`.
+
+Example: release 25 more tickets.
+
+```bat
+curl.exe -X POST "%BASE_URL%/api/admin/release-more" ^
+  -H "Content-Type: application/json" ^
+  -H "Authorization: Bearer %TOKEN%" ^
+  -d "{\"ticketTypeId\":5,\"additionalQuantity\":25}"
+```
+
+---
+
+## 4. Check Holdings
+
+This shows student holdings, wallet balances, ticket ownership, and amount spent.
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/admin/holdings" ^
+  -H "Authorization: Bearer %TOKEN%"
+```
+
+CMD does not format JSON into a table automatically.
+
+For easier reading, save the output to a file:
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/admin/holdings" ^
+  -H "Authorization: Bearer %TOKEN%" ^
+  -o holdings.json
+```
+
+Then open:
+
+```text
+holdings.json
+```
+
+---
+
+## 5. Public Check Tickets
+
+This checks ticket availability for Event 2.
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/events/2/tickets"
+```
+
+To save the result to a file:
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/events/2/tickets" -o event2_tickets.json
+```
+
+Then open:
+
+```text
+event2_tickets.json
+```
+
+---
+
+## 6. Common Adjustments
+
+### Change the Event Being Checked
+
+For Event 3:
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/events/3/tickets"
+```
+
+For Event 4:
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/events/4/tickets"
+```
+
+For Event 5:
+
+```bat
+curl.exe -X GET "%BASE_URL%/api/events/5/tickets"
+```
+
+---
+
+### Change the Ticket Type Being Released
+
+In this part:
+
+```json
+{"ticketTypeId":5,"additionalQuantity":10}
+```
+
+change `ticketTypeId` to the ticket type you want.
+
+Example:
+
+```bat
+curl.exe -X POST "%BASE_URL%/api/admin/release-more" ^
+  -H "Content-Type: application/json" ^
+  -H "Authorization: Bearer %TOKEN%" ^
+  -d "{\"ticketTypeId\":6,\"additionalQuantity\":10}"
+```
+
+---
+
+## 7. Important Notes
+
+- The backend URL is already set to:
+
+```text
+https://acc3202-ticketing-bot.onrender.com
+```
+
+- If login fails, check whether the admin email in `index.js` is:
+
+```text
+admin@hunter-ticket.com
+```
+
+or:
+
+```text
+admin@seatgate-ticket.com
+```
+
+Use the one that appears in your seed data.
+
+- If `%TOKEN%` does not work, log in again and reset the token:
+
+```bat
+set TOKEN=paste_new_token_here
+```
+
+- If the Render server has been sleeping, the first command may take longer or fail once. Run it again after the server wakes up.
