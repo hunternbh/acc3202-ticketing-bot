@@ -764,23 +764,26 @@ app.post('/api/admin/seed-database', async (req, res) => {
     for (const event of events) {
       const eventId = event[0]
       const price = eventId === 1 ? 0.00 : 1.00
-      // Release 999 tickets if it is one of the first 3 events
-      const releasedQty = eventId <= 3 ? 999 : 0
+      
+      // Only release Waves 1, 2, and 3 (which belong to the first event)
+      const isReleased = (eventId === 1)
+      const releasedQty = isReleased ? 999 : 0
 
       await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, $2, $3, 99999, $4, 0, TRUE),
-        ($1, $5, $3, 99999, 0, 0, FALSE),
-        ($1, $6, $3, 99999, 0, 0, FALSE)
+        ($1, $2, $3, 99999, $4, 0, $5),
+        ($1, $6, $3, 99999, $4, 0, $5),
+        ($1, $7, $3, 99999, $4, 0, $5)
         `,
         [
           eventId,
           `Wave ${waveCounter++}`,
           price,
           releasedQty,
+          isReleased,
           `Wave ${waveCounter++}`,
           `Wave ${waveCounter++}`
         ]
