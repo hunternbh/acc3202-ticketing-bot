@@ -4,6 +4,7 @@ import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { query, getClient } from './db.js'
+import { seedUsers } from './users.js'
 import fs from 'fs'
 
 import path from 'path'
@@ -729,18 +730,7 @@ app.post('/api/admin/seed-database', async (req, res) => {
     const schema = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8')
     await query(schema)
 
-    const users = [
-  { email: 'test@t.com', password: 'K7mQ2vR9xT', walletBalance: 3, isAdmin: false },
-  { email: 'test2@t.com', password: 'K7mQ2vR9xT', walletBalance: 3, isAdmin: false },
-  { email: 'test@test.com', password: 'test', walletBalance: 99, isAdmin: false },
-  { email: 'admin@seatgate-ticket.com', password: 'adminpass', walletBalance: 5, isAdmin: true },
-  { email: 'student1@seatgate-ticket.com', password: 'password123', walletBalance: 10, isAdmin: false },
-  { email: 'student2@seatgate-ticket.com', password: 'password123', walletBalance: 10, isAdmin: false },
-  { email: 'auditor@seatgate-ticket.com', password: 'audit-pass-2026', walletBalance: 0, isAdmin: false },
-  { email: 'vip@seatgate-ticket.com', password: 'vip-access-only', walletBalance: 100, isAdmin: false },
-]
-
-    for (const user of users) {
+    for (const user of seedUsers) {
       const passwordHash = await bcrypt.hash(user.password, 10)
 
       await query(
@@ -757,7 +747,7 @@ app.post('/api/admin/seed-database', async (req, res) => {
       [2, 'SeatGate X One', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'seatgate-2.png'],
       [3, 'SeatGate X Two', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'seatgate-3.png'],
       [4, 'SeatGate X Three', 'Central Park Carousel', 'Friday, Apr 25, 2026', 'seatgate-4.png'],
-      [5, 'SeatGate X Final', 'ACC3202 Classroom Simulation', 'Friday, Apr 25, 2026', 'seatgate-5.png'],
+      [5, 'SeatGate X Final', 'The Final Boss Event', 'Friday, Apr 25, 2026', 'seatgate-5.png'],
     ]
 
     for (const event of events) {
