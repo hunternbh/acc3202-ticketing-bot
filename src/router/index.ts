@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import TicketsView from '../views/TicketsView.vue'
 import CitiesView from '../views/CitiesView.vue'
 import ConcertsView from '../views/ConcertsView.vue'
 import EventView from '../views/EventView.vue'
@@ -27,11 +26,6 @@ const router = createRouter({
       path: '/cities',
       name: 'cities',
       component: CitiesView,
-    },
-    {
-      path: '/tickets',
-      name: 'tickets',
-      component: TicketsView,
     },
     {
       path: '/events/:id',

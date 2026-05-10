@@ -53,7 +53,7 @@
     <li>Live performance experience at the listed New York City venue.</li>
     <li>Doors open before the scheduled event time shown above.</li>
     <li>Tickets are available in limited quantities and may sell out before checkout.</li>
-    <li>Early Bird, Pre-General, and General Admission ticket types may be released at different times.</li>
+    <li>Wave 1 through Wave 15 ticket types may be released at different times.</li>
     <li>All ticket selections are subject to availability at the time of purchase.</li>
   </ul>
 </div>
