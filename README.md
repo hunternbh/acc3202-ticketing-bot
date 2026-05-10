@@ -1,3 +1,13 @@
+# Important Disclaimer
+
+This case must be completed only within the sandboxed classroom website provided by the instructor. Students must not use automation techniques on real ticketing websites, commercial platforms, or any system that they do not own or do not have explicit written permission to test.
+
+Unauthorized automation, circumvention of access controls, credential misuse, scraping, or interference with commercial systems may violate website terms of service and applicable civil or criminal laws, including the Computer Fraud and Abuse Act and, in the ticketing context, the BOTS Act.
+
+The purpose of this case is to help students understand IT audit risk, internal controls, transaction processing, and audit evidence in a controlled educational environment. It is not intended to teach or encourage unauthorized automation, ticket scalping, or any activity involving real commercial systems.
+
+---
+
 # ACC3202 Ticketing Bot: Instructor Command Sheet
 
 ## Instructional Video
