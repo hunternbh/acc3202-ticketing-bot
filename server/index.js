@@ -760,23 +760,31 @@ app.post('/api/admin/seed-database', async (req, res) => {
       )
     }
 
+    let waveCounter = 1
     for (const event of events) {
-    const eventId = event[0]
-    const price = eventId === 1 ? 0.00 : 1.00
-    // Release 999 tickets if it is one of the first 3 events
-    const releasedQty = eventId <= 3 ? 999 : 0
+      const eventId = event[0]
+      const price = eventId === 1 ? 0.00 : 1.00
+      // Release 999 tickets if it is one of the first 3 events
+      const releasedQty = eventId <= 3 ? 999 : 0
 
-    await query(
+      await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Early Bird Ticket', $2, 99999, $3, 0, TRUE),
-        ($1, 'Pre-General Ticket', $2, 99999, 0, 0, FALSE),
-        ($1, 'General Admission Ticket', $2, 99999, 0, 0, FALSE)
+        ($1, $2, $3, 99999, $4, 0, TRUE),
+        ($1, $5, $3, 99999, 0, 0, FALSE),
+        ($1, $6, $3, 99999, 0, 0, FALSE)
         `,
-        [eventId, price, releasedQty]
-    )
+        [
+          eventId,
+          `Wave ${waveCounter++}`,
+          price,
+          releasedQty,
+          `Wave ${waveCounter++}`,
+          `Wave ${waveCounter++}`
+        ]
+      )
     }
 
     res.json({ success: true, message: 'Database seeded successfully.' })
