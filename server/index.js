@@ -79,11 +79,11 @@ function rateLimit({
 }
 
 function createToken(user) {
+  // Using a shorter payload and secret for a smaller JWT
   return jwt.sign(
     {
       id: user.id,
-      email: user.email,
-      isAdmin: user.is_admin,
+      adm: user.is_admin ? 1 : 0,
     },
     JWT_SECRET,
     { expiresIn: '8h' }
@@ -99,7 +99,11 @@ function authRequired(req, res, next) {
   }
 
   try {
-    req.user = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token, JWT_SECRET)
+    req.user = {
+      id: decoded.id,
+      isAdmin: decoded.adm === 1
+    }
     next()
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' })
@@ -768,19 +772,20 @@ app.post('/api/admin/seed-database', async (req, res) => {
 
     for (const event of events) {
     const eventId = event[0]
-
     const price = eventId === 1 ? 0.00 : 1.00
+    // Release 999 tickets if it is one of the first 3 events
+    const releasedQty = eventId <= 3 ? 999 : 0
 
     await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Early Bird Ticket', $2, 99999, 0, 0, TRUE),
+        ($1, 'Early Bird Ticket', $2, 99999, $3, 0, TRUE),
         ($1, 'Pre-General Ticket', $2, 99999, 0, 0, FALSE),
         ($1, 'General Admission Ticket', $2, 99999, 0, 0, FALSE)
         `,
-        [eventId, price]
+        [eventId, price, releasedQty]
     )
     }
 
