@@ -2,7 +2,10 @@
 
 ## Instructional Video
 
-Add instructional video link here.
+(https://www.youtube.com/watch?v=gP3dJlWociM)
+
+## Materials
+(https://github.com/hunternbh/acc3202-ticketing-bot/tree/main/materials)
 
 ---
 
@@ -272,7 +275,7 @@ Admin password: adminpass
 
 - Event 1 has tickets priced at **$0**.
 - Events 2–5 have tickets priced at **$1 each**.
-- Change the user list in `index.js` before reseeding.
+- Change the user list in `server/users.js` before reseeding.
 - The GitHub cron job pings the Render app every 5 minutes because the free Render server may sleep.
 - These commands are written for **ReqBin cURL**, not Windows CMD and not PowerShell.
 - Paste each command into ReqBin’s cURL command box.
