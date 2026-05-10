@@ -2,7 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import { query, getClient } from './db.js'
 import { seedUsers } from './users.js'
 import fs from 'fs'
@@ -80,15 +80,9 @@ function rateLimit({
 }
 
 function createToken(user) {
-  // Using a shorter payload and secret for a smaller JWT
-  return jwt.sign(
-    {
-      id: user.id,
-      adm: user.is_admin ? 1 : 0,
-    },
-    JWT_SECRET,
-    { expiresIn: '8h' }
-  )
+  const data = `${user.id}:${user.is_admin ? 1 : 0}`
+  const hmac = crypto.createHmac('sha256', JWT_SECRET).update(data).digest('hex').slice(0, 10)
+  return `${data}:${hmac}`
 }
 
 function authRequired(req, res, next) {
@@ -100,10 +94,16 @@ function authRequired(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const [id, isAdmin, hmac] = token.split(':')
+    const expectedHmac = crypto.createHmac('sha256', JWT_SECRET).update(`${id}:${isAdmin}`).digest('hex').slice(0, 10)
+
+    if (hmac !== expectedHmac) {
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+
     req.user = {
-      id: decoded.id,
-      isAdmin: decoded.adm === 1
+      id: parseInt(id),
+      isAdmin: isAdmin === '1'
     }
     next()
   } catch {
