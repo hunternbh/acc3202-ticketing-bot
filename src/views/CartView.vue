@@ -110,7 +110,7 @@
             type="text"
             autocomplete="off"
             autocapitalize="characters"
-            placeholder="ACC3202"
+            placeholder="Class name"
             @keyup.enter="confirmPurchase"
           />
 
@@ -241,11 +241,11 @@ function isValidDateCode(value) {
 }
 
 function validateIntegrityCheck() {
-  const normalizedClass = classEntry.value.trim().toUpperCase().replace(/\s+/g, '')
+  const normalizedClass = classEntry.value.trim()
   const expectedDate = expectedDateCode()
 
-  if (normalizedClass !== 'ACC3202') {
-    verificationError.value = 'Enter the class as ACC3202.'
+  if (!normalizedClass) {
+    verificationError.value = 'Enter your class.'
     return false
   }
 
