@@ -124,6 +124,8 @@ function setCurrentUser(user) {
 
 function logout() {
   localStorage.removeItem('ticketUser')
+  localStorage.removeItem('ticketToken')
+  localStorage.removeItem('ticketCart')
   currentUser.value = null
 }
 

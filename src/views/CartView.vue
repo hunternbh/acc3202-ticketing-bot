@@ -170,6 +170,10 @@ const balanceAfterPurchase = computed(() => {
   return walletBalance.value - cart.value.total
 })
 
+function isSignedIn() {
+  return Boolean(localStorage.getItem('ticketToken') && localStorage.getItem('ticketUser'))
+}
+
 function goBack() {
   if (cart.value?.eventId) {
     router.push(`/events/${cart.value.eventId}`)
@@ -179,6 +183,27 @@ function goBack() {
 }
 
 function openIntegrityCheck() {
+  if (!isSignedIn()) {
+    localStorage.removeItem('ticketToken')
+    localStorage.removeItem('ticketUser')
+    localStorage.setItem(
+      'ticketPurchaseResult',
+      JSON.stringify({
+        eventTitle: cart.value?.eventTitle || 'Selected event',
+        eventDate: cart.value?.eventDate || '',
+        eventVenue: cart.value?.eventVenue || '',
+        tickets: cart.value?.tickets || [],
+        total: cart.value?.total || 0,
+        walletBalance: 0,
+        balanceAfterPurchase: 0,
+        failureReason: 'You must sign in before purchasing tickets.',
+        timestamp: new Date().toISOString(),
+      })
+    )
+    router.push('/purchase/failure')
+    return
+  }
+
   classEntry.value = ''
   dateEntry.value = ''
   verificationError.value = ''
@@ -248,8 +273,12 @@ async function confirmPurchase() {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem('ticketToken')
+  const storedUser = localStorage.getItem('ticketUser')
 
-  if (!token) {
+  if (!token || !storedUser) {
+    localStorage.removeItem('ticketToken')
+    localStorage.removeItem('ticketUser')
+
     localStorage.setItem(
       'ticketPurchaseResult',
       JSON.stringify({

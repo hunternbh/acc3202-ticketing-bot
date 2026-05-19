@@ -340,17 +340,24 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
       GREATEST(released_quantity - sold_quantity, 0) AS available_quantity
     FROM ticket_types
     WHERE event_id = $1
-    ORDER BY price ASC
+    ORDER BY
+      CASE WHEN name = 'Main Tickets' THEN 0 ELSE 1 END,
+      is_released DESC,
+      GREATEST(released_quantity - sold_quantity, 0) DESC,
+      price ASC,
+      id ASC
     `,
     [eventId]
   )
 
+  const mainTicket = ticketResult.rows[0]
+
   res.json({
     event,
-    tickets: ticketResult.rows.map((ticket) => ({
+    tickets: mainTicket ? [mainTicket].map((ticket) => ({
       id: ticket.id,
       eventId: ticket.event_id,
-      name: ticket.name,
+      name: 'Main Tickets',
       price: Number(ticket.price),
       totalQuantity: ticket.total_quantity,
       releasedQuantity: ticket.released_quantity,
@@ -360,7 +367,7 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
       updatedAt: ticket.updated_at,
       soldOut:
         !ticket.is_released || Number(ticket.available_quantity) <= 0,
-    })),
+    })) : [],
   })
 })
 

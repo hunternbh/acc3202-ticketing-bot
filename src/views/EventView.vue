@@ -94,6 +94,10 @@
               Add to Cart
             </button>
           </div>
+
+          <p v-if="ticketError" class="ticket-error">
+            {{ ticketError }}
+          </p>
         </section>
       </div>
     </section>
@@ -203,6 +207,17 @@ watch(
 )
 
 function addToCart() {
+  const token = localStorage.getItem('ticketToken')
+  const storedUser = localStorage.getItem('ticketUser')
+
+  if (!token || !storedUser) {
+    localStorage.removeItem('ticketToken')
+    localStorage.removeItem('ticketUser')
+    localStorage.removeItem('ticketCart')
+    ticketError.value = 'Sign in before adding tickets to your cart.'
+    return
+  }
+
   const selectedTickets = tickets.value
     .filter((ticket) => ticket.quantity > 0)
     .map((ticket) => ({
@@ -426,6 +441,14 @@ function addToCart() {
   display: flex;
   justify-content: flex-end;
   padding: 20px 16px 0;
+}
+
+.ticket-error {
+  margin: 14px 32px 0;
+  color: #b00020;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: right;
 }
 
 .cart-button {
