@@ -196,7 +196,7 @@ h2 {
 
 .image-wrap {
   position: relative;
-  height: 124px;
+  height: 180px;
   overflow: hidden;
   border-radius: 2px;
   background: #222;
@@ -257,7 +257,7 @@ h2 {
   }
 
   .image-wrap {
-    height: 180px;
+    height: 220px;
   }
 }
 
