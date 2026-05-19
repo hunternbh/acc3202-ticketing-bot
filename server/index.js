@@ -31,6 +31,7 @@ app.use(express.static(distPath))
 
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
+const MAX_TICKETS_PER_EVENT = 5
 
 // In-memory rate-limit store.
 // Good enough for a classroom sandbox on one Render instance.
@@ -364,7 +365,8 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
 })
 
 app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
-  const { eventId, items } = req.body
+  const eventId = Number(req.body.eventId)
+  const { items } = req.body
 
   if (!eventId || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'eventId and items are required' })
@@ -375,11 +377,19 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
       ticketTypeId: Number(item.ticketTypeId),
       quantity: Number(item.quantity),
     }))
-    .filter((item) => item.ticketTypeId && item.quantity > 0)
+    .filter(
+      (item) =>
+        Number.isInteger(item.ticketTypeId) &&
+        Number.isInteger(item.quantity) &&
+        item.ticketTypeId > 0 &&
+        item.quantity > 0
+    )
 
   if (cleanItems.length === 0) {
     return res.status(400).json({ error: 'No valid ticket quantities selected' })
   }
+
+  const requestedQuantity = cleanItems.reduce((sum, item) => sum + item.quantity, 0)
 
   const client = await getClient()
 
@@ -400,6 +410,51 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
 
     if (!user) {
       throw new Error('User not found')
+    }
+
+    await client.query('SELECT pg_advisory_xact_lock($1, $2)', [req.user.id, eventId])
+
+    const existingEventQuantityResult = await client.query(
+      `
+      SELECT COALESCE(SUM(purchase_items.quantity), 0)::int AS quantity_owned
+      FROM purchases
+      JOIN purchase_items
+        ON purchase_items.purchase_id = purchases.id
+      WHERE purchases.user_id = $1
+        AND purchases.event_id = $2
+        AND purchases.status = 'SUCCESS'
+      `,
+      [req.user.id, eventId]
+    )
+
+    const quantityOwned = Number(existingEventQuantityResult.rows[0]?.quantity_owned || 0)
+    const remainingAllowed = Math.max(MAX_TICKETS_PER_EVENT - quantityOwned, 0)
+
+    if (requestedQuantity > remainingAllowed) {
+      await client.query('ROLLBACK')
+
+      await writeAuditLog({
+        userId: req.user.id,
+        action: 'PURCHASE_FAILED',
+        eventId,
+        success: false,
+        metadata: {
+          reason: 'per_event_ticket_limit_exceeded',
+          limit: MAX_TICKETS_PER_EVENT,
+          quantityOwned,
+          requestedQuantity,
+          remainingAllowed,
+        },
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+
+      return res.status(400).json({
+        error: `Each user is limited to ${MAX_TICKETS_PER_EVENT} tickets per event`,
+        limit: MAX_TICKETS_PER_EVENT,
+        quantityOwned,
+        remainingAllowed,
+      })
     }
 
     const ticketIds = cleanItems.map((item) => item.ticketTypeId)
@@ -743,11 +798,9 @@ app.post('/api/admin/seed-database', async (req, res) => {
     }
 
     const events = [
-      [1, 'SeatGate X Trial', 'Audit Control Theatre', 'Friday, Apr 25, 2026', 'seatgate-1.png'],
-      [2, 'SeatGate X One', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'seatgate-2.png'],
-      [3, 'SeatGate X Two', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'seatgate-3.png'],
-      [4, 'SeatGate X Three', 'Central Park Carousel', 'Friday, Apr 25, 2026', 'seatgate-4.png'],
-      [5, 'SeatGate X Final', 'The Final Boss Event', 'Friday, Apr 25, 2026', 'seatgate-5.png'],
+      [1, 'SeatGate X Trial', 'Audit Control Theatre', 'Friday, Apr 25, 2026', 'seatgate-trial.png'],
+      [2, 'SeatGate X Main', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'seatgate-main.png'],
+      [3, 'SeatGate X Post', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'seatgate-post.png'],
     ]
 
     for (const event of events) {
@@ -760,35 +813,52 @@ app.post('/api/admin/seed-database', async (req, res) => {
       )
     }
 
-    let waveCounter = 1
     for (const event of events) {
       const eventId = event[0]
       const price = eventId === 1 ? 0.00 : 1.00
-      
-      // Only release Waves 1, 2, and 3 (which belong to the first event)
-      const isReleased = (eventId === 1)
-      const releasedQty = isReleased ? 999 : 0
 
       await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, $2, $3, 99999, $4, 0, $5),
-        ($1, $6, $3, 99999, $4, 0, $5),
-        ($1, $7, $3, 99999, $4, 0, $5)
+        ($1, 'Main Tickets', $2, 99999, 99999, 0, TRUE)
         `,
-        [
-          eventId,
-          `Wave ${waveCounter++}`,
-          price,
-          releasedQty,
-          isReleased,
-          `Wave ${waveCounter++}`,
-          `Wave ${waveCounter++}`
-        ]
+        [eventId, price]
       )
     }
+
+    const fakePurchaseResult = await query(
+      `
+      INSERT INTO purchases (user_id, event_id, total_amount, status, ip_address, user_agent)
+      SELECT id, 2, 20.00, 'SUCCESS', 'seed', 'database seed'
+      FROM users
+      WHERE email = 'fake-main-buyer@seatgate-ticket.com'
+      RETURNING id
+      `
+    )
+
+    const fakePurchase = fakePurchaseResult.rows[0]
+
+    await query(
+      `
+      INSERT INTO purchase_items (purchase_id, ticket_type_id, quantity, unit_price)
+      SELECT $1, id, 20, price
+      FROM ticket_types
+      WHERE event_id = 2
+        AND name = 'Main Tickets'
+      `,
+      [fakePurchase.id]
+    )
+
+    await query(
+      `
+      UPDATE ticket_types
+      SET sold_quantity = sold_quantity + 20
+      WHERE event_id = 2
+        AND name = 'Main Tickets'
+      `
+    )
 
     res.json({ success: true, message: 'Database seeded successfully.' })
   } catch (error) {

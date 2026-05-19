@@ -73,7 +73,7 @@ const events = [
   {
     id: 1,
     title: 'SeatGate X Trial',
-    image: `${import.meta.env.BASE_URL}seatgate-1.png`,
+    image: `${import.meta.env.BASE_URL}seatgate-trial.png`,
     date: 'Apr 25 · Sat · 1:00 PM',
     venue: 'Audit Control Theatre',
     shortVenue: 'Audit Control Theatre',
@@ -82,43 +82,23 @@ const events = [
   },
   {
     id: 2,
-    title: 'SeatGate X One',
-    image: `${import.meta.env.BASE_URL}seatgate-2.png`,
+    title: 'SeatGate X Main',
+    image: `${import.meta.env.BASE_URL}seatgate-main.png`,
     date: 'Apr 25 · Sat · 2:00 PM',
     venue: 'Revenue Recognition Hall',
     shortVenue: 'Revenue Recognition Hall',
     description:
-      'SeatGate X One is a guided food tour through a fast-moving marketplace. Each stop mirrors a transaction point: order, payment, delivery, refund, and reconciliation. Students will later use this event to test whether the system records transactions accurately.',
+      'SeatGate X Main is the core ticketing exercise where each purchase mirrors a transaction point: authorization, payment, delivery, refund, and reconciliation. Students use this event to test whether the system records transactions accurately.',
   },
   {
     id: 3,
-    title: 'SeatGate X Two',
-    image: `${import.meta.env.BASE_URL}seatgate-3.png`,
+    title: 'SeatGate X Post',
+    image: `${import.meta.env.BASE_URL}seatgate-post.png`,
     date: 'Apr 25 · Sat · 3:00 PM',
     venue: 'Bot Detection Center',
     shortVenue: 'Bot Detection Center',
     description:
-      'SeatGate X Two is a Chinese traditional lion dance performance focused on rhythm, coordination, and crowd movement. In the audit lab, this event is used to study abnormal traffic patterns, repeated requests, and whether the platform can identify bot-like behavior.',
-  },
-  {
-    id: 4,
-    title: 'SeatGate X Three',
-    image: `${import.meta.env.BASE_URL}seatgate-4.png`,
-    date: 'Apr 25 · Sat · 4:00 PM',
-    venue: 'Central Park Carousel',
-    shortVenue: 'Central Park Carousel',
-    description:
-      'SeatGate X Three is a carousel ride in Central Park. The circular motion reflects repeated transaction cycles: listing, purchase, transfer, refund, and resale. This event is useful for examining duplicate sales and improper refund attempts.',
-  },
-  {
-    id: 5,
-    title: 'SeatGate X Final',
-    image: `${import.meta.env.BASE_URL}seatgate-5.png`,
-    date: 'Apr 25 · Sat · 5:00 PM',
-    venue: 'ACC3202 Classroom Simulation',
-    shortVenue: 'ACC3202 Simulation',
-    description:
-      'SeatGate X Final is a classroom simulation where students act as auditors of a ticketing platform. The event focuses on fraud testing, internal controls, audit logs, and whether automated scripts can expose weaknesses in the system.',
+      'SeatGate X Post closes the exercise with post-event review, focusing on abnormal traffic patterns, repeated requests, reconciliations, and whether the platform can identify bot-like behavior.',
   },
 ]
 
@@ -300,7 +280,7 @@ h1 {
 
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
 }
 

@@ -54,8 +54,6 @@
             <option value="1">Apr 25 1pm</option>
             <option value="2">Apr 25 2pm</option>
             <option value="3">Apr 25 3pm</option>
-            <option value="4">Apr 25 4pm</option>
-            <option value="5">Apr 25 5pm</option>
           </select>
           </div>
         </div>

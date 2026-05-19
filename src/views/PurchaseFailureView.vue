@@ -22,12 +22,12 @@
           <strong>${{ result.total.toFixed(2) }}</strong>
         </div>
 
-        <div class="row">
+        <div v-if="showWalletDetails" class="row">
           <span>Wallet Balance</span>
           <strong>${{ result.walletBalance.toFixed(2) }}</strong>
         </div>
 
-        <div class="row">
+        <div v-if="showWalletDetails" class="row">
           <span>Shortfall</span>
           <strong>${{ shortfall.toFixed(2) }}</strong>
         </div>
@@ -36,9 +36,8 @@
       <div class="audit-box">
         <h2>Failure Reason</h2>
         <p>
-          The wallet balance was insufficient for the selected ticket quantity.
-          In the full sandbox version, this failure would be logged as a rejected
-          purchase attempt with a control reason code.
+          {{ failureReason }} This failure was logged as a rejected purchase
+          attempt with a control reason code.
         </p>
       </div>
 
@@ -65,6 +64,14 @@ const result = ref(storedResult ? JSON.parse(storedResult) : null)
 const shortfall = computed(() => {
   if (!result.value) return 0
   return Math.max(0, result.value.total - result.value.walletBalance)
+})
+
+const failureReason = computed(() => {
+  return result.value?.failureReason || 'The purchase could not be completed.'
+})
+
+const showWalletDetails = computed(() => {
+  return failureReason.value === 'Insufficient wallet balance'
 })
 
 function goBack() {

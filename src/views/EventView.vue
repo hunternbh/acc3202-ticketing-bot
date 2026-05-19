@@ -53,7 +53,7 @@
     <li>Live performance experience at the listed New York City venue.</li>
     <li>Doors open before the scheduled event time shown above.</li>
     <li>Tickets are available in limited quantities and may sell out before checkout.</li>
-    <li>Wave 1 through Wave 15 ticket types may be released at different times.</li>
+    <li>Main Tickets are the only ticket type for this event.</li>
     <li>All ticket selections are subject to availability at the time of purchase.</li>
   </ul>
 </div>
@@ -83,14 +83,8 @@
                 Sold Out
               </div>
 
-              <div v-else class="quantity-control">
-                <button @click="decrement(ticket)" :disabled="ticket.quantity === 0">
-                  −
-                </button>
-                <span>{{ ticket.quantity }}</span>
-                <button @click="increment(ticket)">
-                  +
-                </button>
+              <div v-else class="fixed-quantity">
+                {{ ticket.quantity }}
               </div>
             </div>
           </div>
@@ -123,7 +117,7 @@ const events = [
   {
     id: 1,
     title: 'SeatGate X Trial',
-    image: `${import.meta.env.BASE_URL}seatgate-1.png`,
+    image: `${import.meta.env.BASE_URL}seatgate-trial.png`,
     tagline: 'Precision. Timing. Control.',
     date: 'Friday, Apr 25, 2026',
     doors: '1:00 PM',
@@ -133,46 +127,25 @@ const events = [
   },
   {
     id: 2,
-    title: 'SeatGate X One',
-    image: `${import.meta.env.BASE_URL}seatgate-2.png`,
+    title: 'SeatGate X Main',
+    image: `${import.meta.env.BASE_URL}seatgate-main.png`,
+    tagline: 'Transactions. Evidence. Assurance.',
     date: 'Friday, Apr 25, 2026',
     doors: '2:00 PM',
     venue: 'Revenue Recognition Hall',
     description:
-      'SeatGate X One is a food tour through a fast-moving marketplace. Each stop represents a transaction point: purchase, payment, delivery, refund, and reconciliation.',
+      'SeatGate X Main is the core ticketing exercise where each purchase represents a transaction point: authorization, payment, delivery, refund, and reconciliation.',
   },
   {
     id: 3,
-    title: 'SeatGate X Two',
-    image: `${import.meta.env.BASE_URL}seatgate-3.png`,
-    tagline: 'Rhythm. Repetition. Detection.',
+    title: 'SeatGate X Post',
+    image: `${import.meta.env.BASE_URL}seatgate-post.png`,
+    tagline: 'Review. Reconcile. Report.',
     date: 'Friday, Apr 25, 2026',
     doors: '3:00 PM',
     venue: 'Bot Detection Center',
     description:
-      'SeatGate X Two is a Chinese traditional lion dance performance. It is used to frame abnormal traffic patterns, repeated requests, and bot-detection controls.',
-  },
-  {
-    id: 4,
-    title: 'SeatGate X Three',
-    image: `${import.meta.env.BASE_URL}seatgate-4.png`,
-    tagline: 'One carousel. Many transaction cycles.',
-    date: 'Friday, Apr 25, 2026',
-    doors: '4:00 PM',
-    venue: 'Central Park Carousel',
-    description:
-      'SeatGate X Three is a carousel ride in Central Park. Its repeated cycles mirror ticket sale, transfer, refund, and resale activity.',
-  },
-  {
-    id: 5,
-    title: 'SeatGate X Final',
-    image: `${import.meta.env.BASE_URL}seatgate-5.png`,
-    tagline: 'A classroom simulation of fraud testing.',
-    date: 'Friday, Apr 25, 2026',
-    doors: '5:00 PM',
-    venue: 'ACC3202 Classroom Simulation',
-    description:
-      'SeatGate X Final is a classroom simulation where students act as auditors of a ticketing platform. The exercise focuses on fraud testing, internal controls, audit logs, and automated scripts.',
+      'SeatGate X Post closes the exercise with post-event review, focusing on abnormal traffic patterns, repeated requests, reconciliations, and bot-detection controls.',
   },
 ]
 
@@ -188,20 +161,6 @@ const ticketError = ref('')
 const totalQuantity = computed(() => {
   return tickets.value.reduce((sum, ticket) => sum + ticket.quantity, 0)
 })
-function increment(ticket) {
-  if (ticket.soldOut) return
-
-  if (ticket.quantity < ticket.availableQuantity) {
-    ticket.quantity += 1
-  }
-}
-
-function decrement(ticket) {
-  if (ticket.quantity > 0) {
-    ticket.quantity -= 1
-  }
-}
-
 async function loadTickets() {
   loadingTickets.value = true
   ticketError.value = ''
@@ -222,7 +181,7 @@ async function loadTickets() {
       id: ticket.id,
       name: ticket.name,
       price: ticket.price,
-      quantity: 0,
+      quantity: ticket.soldOut ? 0 : 1,
       soldOut: ticket.soldOut,
       availableQuantity: ticket.availableQuantity,
       isReleased: ticket.isReleased,
@@ -450,27 +409,9 @@ function addToCart() {
   justify-self: end;
 }
 
-.quantity-control {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.fixed-quantity {
   font-size: 20px;
-}
-
-.quantity-control button {
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  border: none;
-  background: #e3e3e3;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.quantity-control button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+  font-weight: 800;
 }
 
 .sold-out {

@@ -56,37 +56,23 @@ const events = [
   {
     id: 1,
     title: 'SeatGate X Trial',
-    image: `${import.meta.env.BASE_URL}seatgate-1.png`,
+    image: `${import.meta.env.BASE_URL}seatgate-trial.png`,
     date: 'Apr 25 · Sat · 1:00 PM',
     venue: 'Audit Control Theatre',
   },
   {
     id: 2,
-    title: 'SeatGate X One',
-    image: `${import.meta.env.BASE_URL}seatgate-2.png`,
+    title: 'SeatGate X Main',
+    image: `${import.meta.env.BASE_URL}seatgate-main.png`,
     date: 'Apr 25 · Sat · 2:00 PM',
     venue: 'Revenue Recognition Hall',
   },
   {
     id: 3,
-    title: 'SeatGate X Two',
-    image: `${import.meta.env.BASE_URL}seatgate-3.png`,
-    date: 'Apr 25 · Sat · 2:00 PM',
+    title: 'SeatGate X Post',
+    image: `${import.meta.env.BASE_URL}seatgate-post.png`,
+    date: 'Apr 25 · Sat · 3:00 PM',
     venue: 'Bot Detection Center',
-  },
-  {
-    id: 4,
-    title: 'SeatGate X Three',
-    image: `${import.meta.env.BASE_URL}seatgate-4.png`,
-    date: 'Apr 25 · Sat · 2:00 PM',
-    venue: 'Ticket Transfer Theatre',
-  },
-  {
-    id: 5,
-    title: 'SeatGate X Final',
-    image: `${import.meta.env.BASE_URL}seatgate-5.png`,
-    date: 'Apr 25 · Sat · 2:00 PM',
-    venue: 'Refund Testing Studio',
   },
 ]
 
@@ -199,7 +185,7 @@ h2 {
 
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
 }
 

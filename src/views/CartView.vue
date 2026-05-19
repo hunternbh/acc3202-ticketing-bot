@@ -76,7 +76,7 @@
               Back to Event
             </button>
 
-            <button class="purchase-button" @click="confirmPurchase">
+            <button class="purchase-button" @click="openIntegrityCheck">
               Confirm Purchase
             </button>
           </section>
@@ -86,6 +86,59 @@
           <h1>No tickets selected</h1>
           <p>Return to the concerts page and choose an event.</p>
           <button @click="router.push('/concerts')">Back to Concerts</button>
+        </div>
+      </div>
+    </section>
+
+    <section
+      v-if="showIntegrityCheck"
+      class="verification-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="verification-title"
+    >
+      <div class="verification-modal">
+        <div class="modal-header">Verification Required</div>
+
+        <div class="modal-body">
+          <h2 id="verification-title">Confirm Class Details</h2>
+
+          <label for="class-code">Class</label>
+          <input
+            id="class-code"
+            v-model="classEntry"
+            type="text"
+            autocomplete="off"
+            autocapitalize="characters"
+            placeholder="ACC3202"
+            @keyup.enter="confirmPurchase"
+          />
+
+          <label for="class-date">Date</label>
+          <input
+            id="class-date"
+            v-model="dateEntry"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="8"
+            placeholder="MMDDYYYY"
+            @input="dateEntry = dateEntry.replace(/\D/g, '').slice(0, 8)"
+            @keyup.enter="confirmPurchase"
+          />
+
+          <p v-if="verificationError" class="verification-error">
+            {{ verificationError }}
+          </p>
+        </div>
+
+        <div class="modal-actions">
+          <button class="cancel-button" @click="closeIntegrityCheck">
+            Cancel
+          </button>
+          <button class="verify-button" @click="confirmPurchase">
+            Continue
+          </button>
         </div>
       </div>
     </section>
@@ -101,6 +154,10 @@ const router = useRouter()
 
 const storedCart = localStorage.getItem('ticketCart')
 const cart = ref(storedCart ? JSON.parse(storedCart) : null)
+const showIntegrityCheck = ref(false)
+const classEntry = ref('')
+const dateEntry = ref('')
+const verificationError = ref('')
 
 /*
   For now this is hardcoded.
@@ -121,7 +178,69 @@ function goBack() {
   }
 }
 
+function openIntegrityCheck() {
+  classEntry.value = ''
+  dateEntry.value = ''
+  verificationError.value = ''
+  showIntegrityCheck.value = true
+}
+
+function closeIntegrityCheck() {
+  showIntegrityCheck.value = false
+  classEntry.value = ''
+  dateEntry.value = ''
+  verificationError.value = ''
+}
+
+function expectedDateCode() {
+  const today = new Date()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  const year = String(today.getFullYear())
+  return `${month}${day}${year}`
+}
+
+function isValidDateCode(value) {
+  if (!/^\d{8}$/.test(value)) return false
+
+  const month = Number(value.slice(0, 2))
+  const day = Number(value.slice(2, 4))
+  const year = Number(value.slice(4, 8))
+  const date = new Date(year, month - 1, day)
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+function validateIntegrityCheck() {
+  const normalizedClass = classEntry.value.trim().toUpperCase().replace(/\s+/g, '')
+  const expectedDate = expectedDateCode()
+
+  if (normalizedClass !== 'ACC3202') {
+    verificationError.value = 'Enter the class as ACC3202.'
+    return false
+  }
+
+  if (!isValidDateCode(dateEntry.value)) {
+    verificationError.value = 'Enter a valid date in MMDDYYYY form.'
+    return false
+  }
+
+  if (dateEntry.value !== expectedDate) {
+    verificationError.value = 'Enter today\'s date in MMDDYYYY form.'
+    return false
+  }
+
+  verificationError.value = ''
+  return true
+}
+
 async function confirmPurchase() {
+  if (!validateIntegrityCheck()) return
+
   if (!cart.value) {
     router.push('/purchase/failure')
     return
@@ -196,6 +315,7 @@ async function confirmPurchase() {
     }
 
     localStorage.removeItem('ticketCart')
+    closeIntegrityCheck()
     router.push('/purchase/success')
   } catch (error) {
     localStorage.setItem(
@@ -386,6 +506,102 @@ async function confirmPurchase() {
   min-width: 210px;
 }
 
+.verification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.verification-modal {
+  width: min(100%, 430px);
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.modal-header {
+  background: #e9e9e9;
+  padding: 14px 22px;
+  border-bottom: 1px solid #d4d4d4;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.modal-body {
+  padding: 24px 26px 8px;
+}
+
+.modal-body h2 {
+  margin: 0 0 20px;
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.modal-body label {
+  display: block;
+  margin: 16px 0 7px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #444;
+  text-transform: uppercase;
+}
+
+.modal-body input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #bfc7d3;
+  border-radius: 4px;
+  padding: 13px 14px;
+  font-size: 18px;
+  font-family: inherit;
+}
+
+.modal-body input:focus {
+  outline: 3px solid rgba(0, 87, 255, 0.18);
+  border-color: #0057ff;
+}
+
+.verification-error {
+  min-height: 22px;
+  margin: 14px 0 0;
+  color: #b00020;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 26px 26px;
+}
+
+.cancel-button,
+.verify-button {
+  border: none;
+  padding: 13px 22px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cancel-button {
+  background: #e3e3e3;
+  color: #111;
+}
+
+.verify-button {
+  background: #2c70bd;
+  color: white;
+}
+
 .empty-cart {
   padding: 50px;
 }
@@ -427,6 +643,10 @@ async function confirmPurchase() {
 
   .actions {
     flex-direction: column;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
   }
 }
 </style>
