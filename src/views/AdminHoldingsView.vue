@@ -35,8 +35,8 @@
           </div>
 
           <div>
-            <div class="label">Total Spent</div>
-            <div class="summary-number">${{ totalSpent.toFixed(2) }}</div>
+            <div class="label">Revenue</div>
+            <div class="summary-number">${{ totalRevenue.toFixed(2) }}</div>
           </div>
 
           <div>
@@ -163,7 +163,6 @@
                 <div>Event</div>
                 <div>Ticket Type</div>
                 <div>Qty</div>
-                <div>Spent</div>
                 <div>Last Purchase</div>
               </div>
 
@@ -177,7 +176,40 @@
                 <div>{{ row.event_title || '-' }}</div>
                 <div>{{ row.ticket_type || '-' }}</div>
                 <div>{{ Number(row.quantity_owned || 0) }}</div>
-                <div>${{ Number(row.amount_spent || 0).toFixed(2) }}</div>
+                <div>{{ row.last_purchase_at ? formatTime(row.last_purchase_at) : '-' }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-section">
+          <div class="section-heading">
+            <h2>Revenue</h2>
+          </div>
+
+          <div class="table-wrap">
+            <div class="revenue-table table">
+              <div class="table-header">
+                <div>Email</div>
+                <div>Event</div>
+                <div>Ticket Type</div>
+                <div>Qty</div>
+                <div>Unit Price</div>
+                <div>Revenue</div>
+                <div>Last Purchase</div>
+              </div>
+
+              <div
+                v-for="(row, index) in revenueRows"
+                :key="`${row.email}-${row.event_title}-${row.ticket_type}-${row.unit_price}-${index}`"
+                class="table-row"
+              >
+                <div>{{ row.email }}</div>
+                <div>{{ row.event_title }}</div>
+                <div>{{ row.ticket_type }}</div>
+                <div>{{ Number(row.quantity_sold || 0) }}</div>
+                <div>${{ Number(row.unit_price || 0).toFixed(2) }}</div>
+                <div>${{ Number(row.revenue || 0).toFixed(2) }}</div>
                 <div>{{ row.last_purchase_at ? formatTime(row.last_purchase_at) : '-' }}</div>
               </div>
             </div>
@@ -236,6 +268,7 @@ const errorMessage = ref('')
 const releaseMessage = ref('')
 const seedMessage = ref('')
 const holdings = ref([])
+const revenueRows = ref([])
 const ticketTypes = ref([])
 const auditLogs = ref([])
 const currentUser = ref(null)
@@ -253,9 +286,9 @@ const totalTickets = computed(() => {
   }, 0)
 })
 
-const totalSpent = computed(() => {
-  return holdings.value.reduce((sum, row) => {
-    return sum + Number(row.amount_spent || 0)
+const totalRevenue = computed(() => {
+  return revenueRows.value.reduce((sum, row) => {
+    return sum + Number(row.revenue || 0)
   }, 0)
 })
 
@@ -333,13 +366,15 @@ async function loadDashboard() {
   }
 
   try {
-    const [holdingsData, ticketTypeData, auditLogData] = await Promise.all([
+    const [holdingsData, revenueData, ticketTypeData, auditLogData] = await Promise.all([
       fetchAdminJson('/api/admin/holdings'),
+      fetchAdminJson('/api/admin/revenue'),
       fetchAdminJson('/api/admin/ticket-types'),
       fetchAdminJson('/api/admin/audit-logs'),
     ])
 
     holdings.value = holdingsData
+    revenueRows.value = revenueData
     ticketTypes.value = ticketTypeData
     auditLogs.value = auditLogData.slice(0, 20)
 
@@ -655,7 +690,12 @@ function formatTime(value) {
 
 .holdings-table .table-header,
 .holdings-table .table-row {
-  grid-template-columns: 2fr 0.8fr 1.5fr 1.1fr 0.5fr 0.7fr 1.4fr;
+  grid-template-columns: 2fr 0.8fr 1.5fr 1.1fr 0.5fr 1.4fr;
+}
+
+.revenue-table .table-header,
+.revenue-table .table-row {
+  grid-template-columns: 2fr 1.5fr 1.1fr 0.5fr 0.8fr 0.8fr 1.4fr;
 }
 
 .audit-table .table-header,

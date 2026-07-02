@@ -776,7 +776,6 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
       events.title AS event_title,
       ticket_types.name AS ticket_type,
       SUM(purchase_items.quantity) AS quantity_owned,
-      SUM(purchase_items.quantity * purchase_items.unit_price) AS amount_spent,
       MAX(purchases.created_at) AS last_purchase_at
     FROM users
     LEFT JOIN purchases
@@ -799,6 +798,44 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
       users.email,
       events.title,
       ticket_types.name
+    `
+  )
+
+  res.json(result.rows)
+}))
+
+app.get('/api/admin/revenue', authRequired, adminRequired, asyncHandler(async (req, res) => {
+  const result = await query(
+    `
+    SELECT
+      users.email,
+      events.title AS event_title,
+      ticket_types.name AS ticket_type,
+      SUM(purchase_items.quantity)::int AS quantity_sold,
+      purchase_items.unit_price,
+      SUM(purchase_items.quantity * purchase_items.unit_price) AS revenue,
+      MAX(purchases.created_at) AS last_purchase_at
+    FROM purchases
+    JOIN users
+      ON users.id = purchases.user_id
+    JOIN purchase_items
+      ON purchase_items.purchase_id = purchases.id
+    JOIN ticket_types
+      ON ticket_types.id = purchase_items.ticket_type_id
+    JOIN events
+      ON events.id = purchases.event_id
+    WHERE purchases.status = 'SUCCESS'
+      AND users.is_admin = FALSE
+    GROUP BY
+      users.email,
+      events.title,
+      ticket_types.name,
+      purchase_items.unit_price
+    ORDER BY
+      events.title,
+      users.email,
+      ticket_types.name,
+      purchase_items.unit_price
     `
   )
 
