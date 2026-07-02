@@ -23,7 +23,7 @@
           <section class="wallet-box">
             <div>
               <div class="wallet-label">Wallet Balance</div>
-              <div class="wallet-amount">${{ walletBalance.toFixed(2) }}</div>
+              <div class="wallet-amount">{{ walletDisplay }}</div>
             </div>
 
             <div>
@@ -37,10 +37,14 @@
                 class="after-balance"
                 :class="{ negative: balanceAfterPurchase < 0 }"
               >
-                ${{ balanceAfterPurchase.toFixed(2) }}
+                {{ balanceAfterPurchaseDisplay }}
               </div>
             </div>
           </section>
+
+          <p v-if="walletError" class="wallet-error">
+            {{ walletError }}
+          </p>
 
           <section class="ticket-table">
             <div class="ticket-header">
@@ -76,7 +80,7 @@
               Back to Event
             </button>
 
-            <button class="purchase-button" @click="openIntegrityCheck">
+            <button class="purchase-button" :disabled="walletLoading" @click="openIntegrityCheck">
               Confirm Purchase
             </button>
           </section>
@@ -161,27 +165,39 @@ const classEntry = ref('')
 const dateEntry = ref('')
 const verificationError = ref('')
 
-const walletBalance = ref(readStoredWalletBalance())
+const walletBalance = ref(null)
+const walletLoading = ref(false)
+const walletError = ref('')
+
+const verifiedWalletBalance = computed(() => {
+  return Number.isFinite(Number(walletBalance.value)) ? Number(walletBalance.value) : 0
+})
+
+const walletDisplay = computed(() => {
+  if (walletLoading.value) return 'Loading...'
+  if (walletBalance.value === null) return 'Unavailable'
+  return `$${verifiedWalletBalance.value.toFixed(2)}`
+})
+
+const balanceAfterPurchaseDisplay = computed(() => {
+  if (walletLoading.value) return 'Loading...'
+  if (walletBalance.value === null) return 'Unavailable'
+  return `$${balanceAfterPurchase.value.toFixed(2)}`
+})
 
 const balanceAfterPurchase = computed(() => {
-  if (!cart.value) return walletBalance.value
-  return walletBalance.value - cart.value.total
+  if (!cart.value) return verifiedWalletBalance.value
+  return verifiedWalletBalance.value - cart.value.total
 })
 
 onMounted(() => {
   loadWalletBalance()
 })
 
-function readStoredWalletBalance() {
-  try {
-    const storedUser = localStorage.getItem('ticketUser')
-    const user = storedUser ? JSON.parse(storedUser) : null
-    const balance = Number(user?.walletBalance)
-
-    return Number.isFinite(balance) ? balance : 0
-  } catch {
-    return 0
-  }
+function clearStoredUser() {
+  localStorage.removeItem('ticketUser')
+  localStorage.removeItem('ticketToken')
+  window.dispatchEvent(new Event('ticket-user-updated'))
 }
 
 function updateStoredWalletBalance(balance) {
@@ -199,10 +215,30 @@ function updateStoredWalletBalance(balance) {
   }
 }
 
+async function readJsonResponse(response) {
+  const text = await response.text()
+
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return {}
+  }
+}
+
 async function loadWalletBalance() {
   const token = localStorage.getItem('ticketToken')
 
-  if (!token) return
+  if (!token) {
+    walletBalance.value = null
+    walletLoading.value = false
+    walletError.value = ''
+    return false
+  }
+
+  walletLoading.value = true
+  walletError.value = ''
 
   try {
     const response = await fetch(`${API_BASE}/api/me`, {
@@ -211,16 +247,38 @@ async function loadWalletBalance() {
       },
     })
 
-    const data = await response.json()
+    const data = await readJsonResponse(response)
 
-    if (!response.ok) {
-      return
+    if (response.status === 401 || response.status === 403) {
+      walletBalance.value = null
+      walletError.value = 'Sign in again to verify your wallet balance.'
+      clearStoredUser()
+      return false
     }
 
-    walletBalance.value = Number(data.walletBalance)
-    updateStoredWalletBalance(walletBalance.value)
+    if (!response.ok) {
+      walletBalance.value = null
+      walletError.value = data.error || 'Could not verify your wallet balance.'
+      return false
+    }
+
+    const balance = Number(data.walletBalance)
+
+    if (!Number.isFinite(balance)) {
+      walletBalance.value = null
+      walletError.value = 'The server returned an invalid wallet balance.'
+      return false
+    }
+
+    walletBalance.value = balance
+    updateStoredWalletBalance(balance)
+    return true
   } catch {
-    walletBalance.value = readStoredWalletBalance()
+    walletBalance.value = null
+    walletError.value = 'Could not verify your wallet balance from the server.'
+    return false
+  } finally {
+    walletLoading.value = false
   }
 }
 
@@ -248,8 +306,8 @@ function openIntegrityCheck() {
         eventVenue: cart.value?.eventVenue || '',
         tickets: cart.value?.tickets || [],
         total: cart.value?.total || 0,
-        walletBalance: 0,
-        balanceAfterPurchase: 0,
+        walletBalance: verifiedWalletBalance.value,
+        balanceAfterPurchase: balanceAfterPurchase.value,
         failureReason: 'You must sign in before purchasing tickets.',
         timestamp: new Date().toISOString(),
       })
@@ -342,7 +400,7 @@ async function confirmPurchase() {
         eventVenue: cart.value.eventVenue,
         tickets: cart.value.tickets,
         total: cart.value.total,
-        walletBalance: walletBalance.value,
+        walletBalance: verifiedWalletBalance.value,
         balanceAfterPurchase: balanceAfterPurchase.value,
         failureReason: 'You must sign in before purchasing tickets.',
         timestamp: new Date().toISOString(),
@@ -369,8 +427,8 @@ async function confirmPurchase() {
       }),
     })
 
-    const data = await response.json()
-    const resultWalletBalance = data.walletBalance ?? walletBalance.value
+    const data = await readJsonResponse(response)
+    const resultWalletBalance = data.walletBalance ?? verifiedWalletBalance.value
 
     const result = {
       eventTitle: cart.value.eventTitle,
@@ -407,7 +465,7 @@ async function confirmPurchase() {
         eventVenue: cart.value.eventVenue,
         tickets: cart.value.tickets,
         total: cart.value.total,
-        walletBalance: walletBalance.value,
+        walletBalance: verifiedWalletBalance.value,
         balanceAfterPurchase: balanceAfterPurchase.value,
         failureReason: 'Could not connect to the purchase server.',
         timestamp: new Date().toISOString(),
@@ -518,6 +576,14 @@ async function confirmPurchase() {
   color: #b00020;
 }
 
+.wallet-error {
+  margin: -18px 0 24px;
+  color: #b00020;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: right;
+}
+
 .ticket-table {
   border-top: 1px solid #cfcfcf;
   border-bottom: 1px solid #cfcfcf;
@@ -585,6 +651,11 @@ async function confirmPurchase() {
   background: #2c70bd;
   color: white;
   min-width: 210px;
+}
+
+.purchase-button:disabled {
+  background: #9bbcdf;
+  cursor: not-allowed;
 }
 
 .verification-overlay {
