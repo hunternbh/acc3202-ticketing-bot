@@ -96,26 +96,34 @@ function createToken(user) {
   return `${data}:${hmac}`
 }
 
-function authRequired(req, res, next) {
+function getBearerToken(req) {
   const header = req.headers.authorization || ''
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null
+  return header.startsWith('Bearer ') ? header.slice(7) : null
+}
+
+function parseAuthToken(token) {
+  const [id, isAdmin, hmac] = token.split(':')
+  const expectedHmac = crypto.createHmac('sha256', JWT_SECRET).update(`${id}:${isAdmin}`).digest('hex').slice(0, 10)
+
+  if (!id || !isAdmin || hmac !== expectedHmac) {
+    throw new Error('Invalid token')
+  }
+
+  return {
+    id: parseInt(id, 10),
+    isAdmin: isAdmin === '1'
+  }
+}
+
+function authRequired(req, res, next) {
+  const token = getBearerToken(req)
 
   if (!token) {
     return res.status(401).json({ error: 'Missing token' })
   }
 
   try {
-    const [id, isAdmin, hmac] = token.split(':')
-    const expectedHmac = crypto.createHmac('sha256', JWT_SECRET).update(`${id}:${isAdmin}`).digest('hex').slice(0, 10)
-
-    if (hmac !== expectedHmac) {
-      return res.status(401).json({ error: 'Invalid token' })
-    }
-
-    req.user = {
-      id: parseInt(id),
-      isAdmin: isAdmin === '1'
-    }
+    req.user = parseAuthToken(token)
     next()
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' })
@@ -132,6 +140,24 @@ const userTwoPerSecond = rateLimit({
 function adminRequired(req, res, next) {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: 'Admin access required' })
+  }
+
+  next()
+}
+
+function seedSecretRequired(req, res, next) {
+  const seedSecret = req.headers['x-seed-secret']
+
+  if (!process.env.SEED_SECRET) {
+    return res.status(503).json({ error: 'Seed secret is not configured on the server' })
+  }
+
+  if (!seedSecret) {
+    return res.status(400).json({ error: 'Seed secret is required' })
+  }
+
+  if (seedSecret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Invalid seed secret' })
   }
 
   next()
@@ -803,13 +829,7 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, asyncHandler(async
   res.json(result.rows)
 }))
 
-app.post('/api/admin/seed-database', asyncHandler(async (req, res) => {
-  const seedSecret = req.headers['x-seed-secret']
-
-  if (seedSecret !== process.env.SEED_SECRET) {
-    return res.status(403).json({ error: 'Invalid seed secret' })
-  }
-
+app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequired, asyncHandler(async (req, res) => {
   try {
     const schema = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8')
     await query(schema)
@@ -888,6 +908,18 @@ app.post('/api/admin/seed-database', asyncHandler(async (req, res) => {
         AND name = 'Main Tickets'
       `
     )
+
+    await writeAuditLog({
+      userId: null,
+      action: 'ADMIN_RESEED_DATABASE',
+      success: true,
+      metadata: {
+        requestedBy: 'admin',
+        requestedByUserId: req.user.id,
+      },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
 
     res.json({ success: true, message: 'Database seeded successfully.' })
   } catch (error) {

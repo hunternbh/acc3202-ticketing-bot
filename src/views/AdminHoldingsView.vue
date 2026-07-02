@@ -47,6 +47,37 @@
 
         <section class="admin-section">
           <div class="section-heading">
+            <h2>Reseed Database</h2>
+            <span>Seed secret required</span>
+          </div>
+
+          <form class="reseed-form" @submit.prevent="reseedDatabase">
+            <label>
+              Seed Secret
+              <input
+                v-model="seedSecret"
+                type="password"
+                autocomplete="off"
+                placeholder="Enter seed secret"
+              />
+            </label>
+
+            <button
+              type="submit"
+              class="danger-button"
+              :disabled="seedLoading || !seedSecret.trim()"
+            >
+              {{ seedLoading ? 'Reseeding...' : 'Reseed' }}
+            </button>
+          </form>
+
+          <p v-if="seedMessage" class="release-message">
+            {{ seedMessage }}
+          </p>
+        </section>
+
+        <section class="admin-section">
+          <div class="section-heading">
             <h2>Release Tickets</h2>
             <span v-if="selectedTicket">Ticket Type ID {{ selectedTicket.ticketTypeId }}</span>
           </div>
@@ -200,14 +231,17 @@ const API_BASE =
 
 const loading = ref(true)
 const releaseLoading = ref(false)
+const seedLoading = ref(false)
 const errorMessage = ref('')
 const releaseMessage = ref('')
+const seedMessage = ref('')
 const holdings = ref([])
 const ticketTypes = ref([])
 const auditLogs = ref([])
 const currentUser = ref(null)
 const selectedTicketTypeId = ref('')
 const additionalQuantity = ref(10)
+const seedSecret = ref('')
 
 const uniqueStudentCount = computed(() => {
   return new Set(holdings.value.map((row) => row.email)).size
@@ -380,6 +414,42 @@ async function releaseTickets() {
   }
 }
 
+async function reseedDatabase() {
+  seedMessage.value = ''
+
+  const secret = seedSecret.value.trim()
+
+  if (!secret) {
+    seedMessage.value = 'Enter the seed secret.'
+    return
+  }
+
+  const confirmed = window.confirm(
+    'Reseeding will reset users, tickets, purchases, and audit logs. Continue?'
+  )
+
+  if (!confirmed) return
+
+  seedLoading.value = true
+
+  try {
+    const data = await fetchAdminJson('/api/admin/seed-database', {
+      method: 'POST',
+      headers: {
+        'x-seed-secret': secret,
+      },
+    })
+
+    seedSecret.value = ''
+    await loadDashboard()
+    seedMessage.value = data.message || 'Database seeded successfully.'
+  } catch (error) {
+    seedMessage.value = error.message || 'Could not reseed the database.'
+  } finally {
+    seedLoading.value = false
+  }
+}
+
 function formatTime(value) {
   return new Date(value).toLocaleString()
 }
@@ -420,7 +490,8 @@ function formatTime(value) {
 }
 
 .refresh-button,
-.release-form button {
+.release-form button,
+.reseed-form button {
   border: none;
   border-radius: 4px;
   background: #0057ff;
@@ -432,9 +503,14 @@ function formatTime(value) {
 }
 
 .refresh-button:disabled,
-.release-form button:disabled {
+.release-form button:disabled,
+.reseed-form button:disabled {
   background: #9bbcff;
   cursor: not-allowed;
+}
+
+.danger-button:not(:disabled) {
+  background: #b00020;
 }
 
 .status-box {
@@ -517,7 +593,16 @@ function formatTime(value) {
   padding: 22px;
 }
 
-.release-form label {
+.reseed-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  padding: 22px;
+}
+
+.release-form label,
+.reseed-form label {
   display: grid;
   gap: 7px;
   font-size: 13px;
@@ -527,7 +612,8 @@ function formatTime(value) {
 }
 
 .release-form select,
-.release-form input {
+.release-form input,
+.reseed-form input {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #bfc7d3;
@@ -612,7 +698,8 @@ function formatTime(value) {
   }
 
   .summary-row,
-  .release-form {
+  .release-form,
+  .reseed-form {
     grid-template-columns: 1fr;
   }
 
