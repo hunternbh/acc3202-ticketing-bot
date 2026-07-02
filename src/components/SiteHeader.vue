@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import LoginModal from './LoginModal.vue'
 
@@ -112,11 +112,27 @@ const showLogin = ref(false)
 const currentUser = ref(null)
 
 onMounted(() => {
-  const storedUser = localStorage.getItem('ticketUser')
-  if (storedUser) {
-    currentUser.value = JSON.parse(storedUser)
-  }
+  loadStoredUser()
+  window.addEventListener('ticket-user-updated', loadStoredUser)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('ticket-user-updated', loadStoredUser)
+})
+
+function loadStoredUser() {
+  try {
+    const storedUser = localStorage.getItem('ticketUser')
+    if (storedUser) {
+      currentUser.value = JSON.parse(storedUser)
+    } else {
+      currentUser.value = null
+    }
+  } catch {
+    localStorage.removeItem('ticketUser')
+    currentUser.value = null
+  }
+}
 
 function setCurrentUser(user) {
   currentUser.value = user
@@ -127,6 +143,7 @@ function logout() {
   localStorage.removeItem('ticketToken')
   localStorage.removeItem('ticketCart')
   currentUser.value = null
+  window.dispatchEvent(new Event('ticket-user-updated'))
 }
 
 function runSearch() {

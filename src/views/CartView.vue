@@ -146,11 +146,13 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteHeader from '../components/SiteHeader.vue'
 
 const router = useRouter()
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || 'https://acc3202-ticketing-bot.onrender.com'
 
 const storedCart = localStorage.getItem('ticketCart')
 const cart = ref(storedCart ? JSON.parse(storedCart) : null)
@@ -159,16 +161,68 @@ const classEntry = ref('')
 const dateEntry = ref('')
 const verificationError = ref('')
 
-/*
-  For now this is hardcoded.
-  Later, this should come from the backend user account table.
-*/
-const walletBalance = ref(5)
+const walletBalance = ref(readStoredWalletBalance())
 
 const balanceAfterPurchase = computed(() => {
   if (!cart.value) return walletBalance.value
   return walletBalance.value - cart.value.total
 })
+
+onMounted(() => {
+  loadWalletBalance()
+})
+
+function readStoredWalletBalance() {
+  try {
+    const storedUser = localStorage.getItem('ticketUser')
+    const user = storedUser ? JSON.parse(storedUser) : null
+    const balance = Number(user?.walletBalance)
+
+    return Number.isFinite(balance) ? balance : 0
+  } catch {
+    return 0
+  }
+}
+
+function updateStoredWalletBalance(balance) {
+  try {
+    const storedUser = localStorage.getItem('ticketUser')
+
+    if (!storedUser) return
+
+    const user = JSON.parse(storedUser)
+    user.walletBalance = balance
+    localStorage.setItem('ticketUser', JSON.stringify(user))
+    window.dispatchEvent(new Event('ticket-user-updated'))
+  } catch {
+    localStorage.removeItem('ticketUser')
+  }
+}
+
+async function loadWalletBalance() {
+  const token = localStorage.getItem('ticketToken')
+
+  if (!token) return
+
+  try {
+    const response = await fetch(`${API_BASE}/api/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return
+    }
+
+    walletBalance.value = Number(data.walletBalance)
+    updateStoredWalletBalance(walletBalance.value)
+  } catch {
+    walletBalance.value = readStoredWalletBalance()
+  }
+}
 
 function isSignedIn() {
   return Boolean(localStorage.getItem('ticketToken') && localStorage.getItem('ticketUser'))
@@ -266,12 +320,13 @@ function validateIntegrityCheck() {
 async function confirmPurchase() {
   if (!validateIntegrityCheck()) return
 
+  await loadWalletBalance()
+
   if (!cart.value) {
     router.push('/purchase/failure')
     return
   }
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem('ticketToken')
   const storedUser = localStorage.getItem('ticketUser')
 
@@ -287,8 +342,8 @@ async function confirmPurchase() {
         eventVenue: cart.value.eventVenue,
         tickets: cart.value.tickets,
         total: cart.value.total,
-        walletBalance: 0,
-        balanceAfterPurchase: 0,
+        walletBalance: walletBalance.value,
+        balanceAfterPurchase: balanceAfterPurchase.value,
         failureReason: 'You must sign in before purchasing tickets.',
         timestamp: new Date().toISOString(),
       })
@@ -315,6 +370,7 @@ async function confirmPurchase() {
     })
 
     const data = await response.json()
+    const resultWalletBalance = data.walletBalance ?? walletBalance.value
 
     const result = {
       eventTitle: cart.value.eventTitle,
@@ -322,8 +378,8 @@ async function confirmPurchase() {
       eventVenue: cart.value.eventVenue,
       tickets: cart.value.tickets,
       total: cart.value.total,
-      walletBalance: data.walletBalance ?? 0,
-      balanceAfterPurchase: data.walletBalance ?? 0,
+      walletBalance: resultWalletBalance,
+      balanceAfterPurchase: resultWalletBalance,
       purchaseId: data.purchaseId,
       failureReason: data.error,
       timestamp: new Date().toISOString(),
@@ -336,12 +392,8 @@ async function confirmPurchase() {
       return
     }
 
-    const storedUser = localStorage.getItem('ticketUser')
-    if (storedUser) {
-      const user = JSON.parse(storedUser)
-      user.walletBalance = data.walletBalance
-      localStorage.setItem('ticketUser', JSON.stringify(user))
-    }
+    walletBalance.value = Number(data.walletBalance)
+    updateStoredWalletBalance(walletBalance.value)
 
     localStorage.removeItem('ticketCart')
     closeIntegrityCheck()
@@ -355,8 +407,8 @@ async function confirmPurchase() {
         eventVenue: cart.value.eventVenue,
         tickets: cart.value.tickets,
         total: cart.value.total,
-        walletBalance: 0,
-        balanceAfterPurchase: 0,
+        walletBalance: walletBalance.value,
+        balanceAfterPurchase: balanceAfterPurchase.value,
         failureReason: 'Could not connect to the purchase server.',
         timestamp: new Date().toISOString(),
       })
