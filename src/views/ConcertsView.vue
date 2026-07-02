@@ -187,6 +187,7 @@ h1 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
 }
 
 .feature-text {
@@ -304,6 +305,7 @@ h1 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
 }
 
 .event-card h3 {

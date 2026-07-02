@@ -686,7 +686,7 @@ app.post('/api/admin/release-more', authRequired, adminRequired, asyncHandler(as
     `
     UPDATE ticket_types
     SET
-      released_quantity = LEAST(released_quantity + $1, total_quantity),
+      released_quantity = LEAST(GREATEST(released_quantity, sold_quantity) + $1, total_quantity),
       is_released = TRUE
     WHERE id = $2
     RETURNING
@@ -844,15 +844,16 @@ app.post('/api/admin/seed-database', asyncHandler(async (req, res) => {
     for (const event of events) {
       const eventId = event[0]
       const price = eventId === 1 ? 0.00 : 1.00
+      const releasedQuantity = eventId === 1 ? 99999 : 0
 
       await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Main Tickets', $2, 99999, 99999, 0, TRUE)
+        ($1, 'Main Tickets', $2, 99999, $3, 0, $4)
         `,
-        [eventId, price]
+        [eventId, price, releasedQuantity, releasedQuantity > 0]
       )
     }
 

@@ -139,6 +139,7 @@ function loadStoredUser() {
 
 function setCurrentUser(user) {
   currentUser.value = user
+  window.dispatchEvent(new Event('ticket-user-updated'))
 
   if (user?.isAdmin) {
     router.push('/admin')

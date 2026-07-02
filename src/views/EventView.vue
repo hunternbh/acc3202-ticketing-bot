@@ -58,10 +58,11 @@
           </ul>
         </div>
 
-        <section class="ticket-section">
+        <section class="ticket-section" :class="{ 'with-availability': isLoggedIn }">
           <div class="ticket-header">
             <div>Ticket</div>
             <div>Price</div>
+            <div v-if="isLoggedIn">Available</div>
             <div>Quantity</div>
           </div>
 
@@ -77,6 +78,10 @@
 
             <div class="ticket-price">
               ${{ ticket.price.toFixed(2) }}
+            </div>
+
+            <div v-if="isLoggedIn" class="ticket-available">
+              {{ ticket.availableQuantity }}
             </div>
 
             <div class="ticket-quantity">
@@ -111,7 +116,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SiteHeader from '../components/SiteHeader.vue'
 
@@ -151,6 +156,7 @@ const event = computed(() => {
 const tickets = ref([])
 const loadingTickets = ref(false)
 const ticketError = ref('')
+const isLoggedIn = ref(false)
 
 const totalQuantity = computed(() => {
   return tickets.value.reduce((sum, ticket) => sum + ticket.quantity, 0)
@@ -193,8 +199,19 @@ async function loadTickets() {
   }
 }
 
-onMounted(loadTickets)
+onMounted(() => {
+  updateLoginState()
+  window.addEventListener('ticket-user-updated', updateLoginState)
+  loadTickets()
+})
 
+onBeforeUnmount(() => {
+  window.removeEventListener('ticket-user-updated', updateLoginState)
+})
+
+function updateLoginState() {
+  isLoggedIn.value = Boolean(localStorage.getItem('ticketToken') && localStorage.getItem('ticketUser'))
+}
 watch(
   () => route.params.id,
   () => {
@@ -391,6 +408,11 @@ function addToCart() {
   align-items: center;
 }
 
+.ticket-section.with-availability .ticket-header,
+.ticket-section.with-availability .ticket-row {
+  grid-template-columns: 1.6fr 0.8fr 0.8fr 0.8fr;
+}
+
 .ticket-header {
   padding: 10px 32px;
   font-size: 18px;
@@ -413,6 +435,11 @@ function addToCart() {
 
 .ticket-price {
   font-weight: 500;
+}
+
+.ticket-available {
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .ticket-quantity {
@@ -508,6 +535,11 @@ function addToCart() {
   .ticket-row {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .ticket-section.with-availability .ticket-header,
+  .ticket-section.with-availability .ticket-row {
+    grid-template-columns: 1fr;
   }
 
   .ticket-header {

@@ -51,15 +51,16 @@ async function run() {
   for (const event of events) {
     const eventId = event[0]
     const price = eventId === 1 ? 0.00 : 1.00
+    const releasedQuantity = eventId === 1 ? 99999 : 0
 
     await query(
       `
       INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
       VALUES
-        ($1, 'Main Tickets', $2, 99999, 99999, 0, TRUE)
+        ($1, 'Main Tickets', $2, 99999, $3, 0, $4)
       `,
-      [eventId, price]
+      [eventId, price, releasedQuantity, releasedQuantity > 0]
     )
   }
 
