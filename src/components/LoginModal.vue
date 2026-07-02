@@ -50,11 +50,26 @@ const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 
+async function readJsonResponse(response) {
+  const text = await response.text()
+
+  if (!text) {
+    return {}
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return {}
+  }
+}
+
 async function handleLogin() {
   errorMessage.value = ''
 
   try {
-    const API_BASE = import.meta.env.VITE_API_BASE_URL
+    const API_BASE =
+      import.meta.env.VITE_API_BASE_URL || 'https://acc3202-ticketing-bot.onrender.com'
 
     const response = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
@@ -67,10 +82,10 @@ async function handleLogin() {
       }),
     })
 
-    const data = await response.json()
+    const data = await readJsonResponse(response)
 
     if (!response.ok) {
-      errorMessage.value = data.error || 'Invalid email or password.'
+      errorMessage.value = data.error || `Login server returned ${response.status}.`
       return
     }
 

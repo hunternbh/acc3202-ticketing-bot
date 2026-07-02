@@ -13,14 +13,14 @@
 
         <p class="intro">
           Explore the SeatGate X event series. Hover over each event to preview the performance,
-          then click to open the ticketing page. These events will later become the sandbox
-          environment for testing fraud risks, bot behavior, and audit trails.
+          then click to open the ticketing page. These events are used for testing fraud risks,
+          bot behavior, and audit trails.
         </p>
 
         <section class="feature-panel" @click="goToEvent(activeEvent.id)">
           <div class="feature-image-wrap">
             <img :src="activeEvent.image" :alt="activeEvent.title" />
-            <span class="today-badge">▣ TODAY</span>
+            <span class="today-badge">TODAY</span>
           </div>
 
           <div class="feature-text">
@@ -42,10 +42,10 @@
               :key="event.id"
               class="event-card"
               :class="{ active: event.id === activeEvent.id }"
+              tabindex="0"
               @mouseenter="activeEvent = event"
               @focus="activeEvent = event"
               @click="goToEvent(event.id)"
-              tabindex="0"
             >
               <div class="image-wrap">
                 <img :src="event.image" :alt="event.title" />
@@ -74,7 +74,7 @@ const events = [
     id: 1,
     title: 'SeatGate X Trial',
     image: `${import.meta.env.BASE_URL}seatgate-trial.png`,
-    date: 'Apr 25 · Sat · 1:00 PM',
+    date: 'Apr 25 - Sat - 1:00 PM',
     venue: 'Audit Control Theatre',
     shortVenue: 'Audit Control Theatre',
     description:
@@ -84,21 +84,11 @@ const events = [
     id: 2,
     title: 'SeatGate X Main',
     image: `${import.meta.env.BASE_URL}seatgate-main.png`,
-    date: 'Apr 25 · Sat · 2:00 PM',
+    date: 'Apr 25 - Sat - 2:00 PM',
     venue: 'Revenue Recognition Hall',
     shortVenue: 'Revenue Recognition Hall',
     description:
       'SeatGate X Main is the core ticketing exercise where each purchase mirrors a transaction point: authorization, payment, delivery, refund, and reconciliation. Students use this event to test whether the system records transactions accurately.',
-  },
-  {
-    id: 3,
-    title: 'SeatGate X Post',
-    image: `${import.meta.env.BASE_URL}seatgate-post.png`,
-    date: 'Apr 25 · Sat · 3:00 PM',
-    venue: 'Bot Detection Center',
-    shortVenue: 'Bot Detection Center',
-    description:
-      'SeatGate X Post closes the exercise with post-event review, focusing on abnormal traffic patterns, repeated requests, reconciliations, and whether the platform can identify bot-like behavior.',
   },
 ]
 
@@ -153,7 +143,7 @@ h1 {
   line-height: 0.95;
   margin: 0;
   font-weight: 900;
-  letter-spacing: -3px;
+  letter-spacing: 0;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
 }
 
@@ -280,7 +270,7 @@ h1 {
 
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
 

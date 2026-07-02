@@ -26,7 +26,7 @@
             <p class="all-ages">All Ages</p>
 
             <div class="info-row">
-              <span class="info-icon">📍</span>
+              <span class="info-icon">LOC</span>
               <div>
                 <strong>{{ event.venue }}</strong>
                 <br />
@@ -35,7 +35,7 @@
             </div>
 
             <div class="info-row">
-              <span class="info-icon">📅</span>
+              <span class="info-icon">DATE</span>
               <div>
                 <strong>{{ event.date }}</strong>
                 <br />
@@ -46,17 +46,17 @@
         </div>
 
         <div class="description">
-  <p>{{ event.description }}</p>
+          <p>{{ event.description }}</p>
 
-  <ul>
-    <li>General admission access to the selected SeatGate X event.</li>
-    <li>Live performance experience at the listed New York City venue.</li>
-    <li>Doors open before the scheduled event time shown above.</li>
-    <li>Tickets are available in limited quantities and may sell out before checkout.</li>
-    <li>Main Tickets are the only ticket type for this event.</li>
-    <li>All ticket selections are subject to availability at the time of purchase.</li>
-  </ul>
-</div>
+          <ul>
+            <li>General admission access to the selected SeatGate X event.</li>
+            <li>Live performance experience at the listed New York City venue.</li>
+            <li>Doors open before the scheduled event time shown above.</li>
+            <li>Tickets are available in limited quantities and may sell out before checkout.</li>
+            <li>Main Tickets are the only ticket type for this event.</li>
+            <li>All ticket selections are subject to availability at the time of purchase.</li>
+          </ul>
+        </div>
 
         <section class="ticket-section">
           <div class="ticket-header">
@@ -76,8 +76,9 @@
             </div>
 
             <div class="ticket-price">
-  ${{ ticket.price.toFixed(2) }}
-</div>
+              ${{ ticket.price.toFixed(2) }}
+            </div>
+
             <div class="ticket-quantity">
               <div v-if="ticket.soldOut" class="sold-out">
                 Sold Out
@@ -110,7 +111,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SiteHeader from '../components/SiteHeader.vue'
 
@@ -140,17 +141,6 @@ const events = [
     description:
       'SeatGate X Main is the core ticketing exercise where each purchase represents a transaction point: authorization, payment, delivery, refund, and reconciliation.',
   },
-  {
-    id: 3,
-    title: 'SeatGate X Post',
-    image: `${import.meta.env.BASE_URL}seatgate-post.png`,
-    tagline: 'Review. Reconcile. Report.',
-    date: 'Friday, Apr 25, 2026',
-    doors: '3:00 PM',
-    venue: 'Bot Detection Center',
-    description:
-      'SeatGate X Post closes the exercise with post-event review, focusing on abnormal traffic patterns, repeated requests, reconciliations, and bot-detection controls.',
-  },
 ]
 
 const event = computed(() => {
@@ -165,7 +155,13 @@ const ticketError = ref('')
 const totalQuantity = computed(() => {
   return tickets.value.reduce((sum, ticket) => sum + ticket.quantity, 0)
 })
+
 async function loadTickets() {
+  if (!event.value) {
+    tickets.value = []
+    return
+  }
+
   loadingTickets.value = true
   ticketError.value = ''
 
@@ -190,7 +186,7 @@ async function loadTickets() {
       availableQuantity: ticket.availableQuantity,
       isReleased: ticket.isReleased,
     }))
-  } catch (error) {
+  } catch {
     ticketError.value = 'Could not connect to the ticket server.'
   } finally {
     loadingTickets.value = false
@@ -242,8 +238,6 @@ function addToCart() {
   localStorage.setItem('ticketCart', JSON.stringify(cart))
   router.push('/cart')
 }
-
-
 </script>
 
 <style scoped>
@@ -289,7 +283,7 @@ function addToCart() {
   font-size: 70px;
   line-height: 0.9;
   font-weight: 900;
-  letter-spacing: -2px;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -363,9 +357,10 @@ function addToCart() {
 }
 
 .info-icon {
-  font-size: 28px;
   color: #0057ff;
-  width: 30px;
+  width: 38px;
+  font-size: 12px;
+  font-weight: 900;
   text-align: center;
 }
 

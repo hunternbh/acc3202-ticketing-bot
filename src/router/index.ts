@@ -33,9 +33,13 @@ const router = createRouter({
       component: EventView,
     },
     {
-      path: '/admin/holdings',
-      name: 'admin-holdings',
+      path: '/admin',
+      name: 'admin',
       component: AdminHoldingsView,
+    },
+    {
+      path: '/admin/holdings',
+      redirect: '/admin',
     },
     {
       path: '/cart',

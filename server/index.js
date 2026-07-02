@@ -25,13 +25,23 @@ app.use(cors({
 
 app.use(express.json())
 
-// Serve static files from the 'dist' directory
 const distPath = path.join(__dirname, '../dist')
-app.use(express.static(distPath))
+const indexPath = path.join(distPath, 'index.html')
+const hasBuiltFrontend = fs.existsSync(indexPath)
+
+if (hasBuiltFrontend) {
+  app.use(express.static(distPath))
+}
 
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
 const MAX_TICKETS_PER_EVENT = 5
+
+function asyncHandler(handler) {
+  return function wrappedAsyncHandler(req, res, next) {
+    Promise.resolve(handler(req, res, next)).catch(next)
+  }
+}
 
 // In-memory rate-limit store.
 // Good enough for a classroom sandbox on one Render instance.
@@ -127,7 +137,7 @@ function adminRequired(req, res, next) {
   next()
 }
 
-app.get('/api/my-holdings', authRequired, userTwoPerSecond, async (req, res) => {
+app.get('/api/my-holdings', authRequired, userTwoPerSecond, asyncHandler(async (req, res) => {
   const userResult = await query(
     `
     SELECT id, email, wallet_balance
@@ -189,7 +199,7 @@ app.get('/api/my-holdings', authRequired, userTwoPerSecond, async (req, res) => 
       subtotal: Number(row.subtotal),
     })),
   })
-})
+}))
 
 async function writeAuditLog({
   userId = null,
@@ -216,7 +226,18 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'acc3202-ticketing-api' })
 })
 
-app.post('/api/login', async (req, res) => {
+app.get('/api/health/db', asyncHandler(async (req, res) => {
+  const result = await query('SELECT NOW() AS now')
+
+  res.json({
+    ok: true,
+    service: 'acc3202-ticketing-api',
+    database: true,
+    now: result.rows[0].now,
+  })
+}))
+
+app.post('/api/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
@@ -281,9 +302,9 @@ app.post('/api/login', async (req, res) => {
       isAdmin: user.is_admin,
     },
   })
-})
+}))
 
-app.get('/api/me', authRequired, userTwoPerSecond, async (req, res) => {
+app.get('/api/me', authRequired, userTwoPerSecond, asyncHandler(async (req, res) => {
   const result = await query(
     `
     SELECT id, email, wallet_balance, is_admin
@@ -305,9 +326,9 @@ app.get('/api/me', authRequired, userTwoPerSecond, async (req, res) => {
     walletBalance: Number(user.wallet_balance),
     isAdmin: user.is_admin,
   })
-})
+}))
 
-app.get('/api/events/:eventId/tickets', async (req, res) => {
+app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
   const eventId = Number(req.params.eventId)
 
   const eventResult = await query(
@@ -315,6 +336,7 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
     SELECT id, title, venue, event_date, image
     FROM events
     WHERE id = $1
+      AND id IN (1, 2)
     `,
     [eventId]
   )
@@ -369,9 +391,9 @@ app.get('/api/events/:eventId/tickets', async (req, res) => {
         !ticket.is_released || Number(ticket.available_quantity) <= 0,
     })) : [],
   })
-})
+}))
 
-app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
+app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (req, res) => {
   const eventId = Number(req.body.eventId)
   const { items } = req.body
 
@@ -649,9 +671,9 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, async (req, res) => {
   } finally {
     client.release()
   }
-})
+}))
 
-app.post('/api/admin/release-more', authRequired, adminRequired, async (req, res) => {
+app.post('/api/admin/release-more', authRequired, adminRequired, asyncHandler(async (req, res) => {
   const { ticketTypeId, additionalQuantity } = req.body
 
   if (!ticketTypeId || additionalQuantity === undefined) {
@@ -716,9 +738,9 @@ app.post('/api/admin/release-more', authRequired, adminRequired, async (req, res
       isReleased: ticket.is_released,
     },
   })
-})
+}))
 
-app.get('/api/admin/holdings', authRequired, adminRequired, async (req, res) => {
+app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (req, res) => {
   const result = await query(
     `
     SELECT
@@ -755,9 +777,9 @@ app.get('/api/admin/holdings', authRequired, adminRequired, async (req, res) => 
   )
 
   res.json(result.rows)
-})
+}))
 
-app.get('/api/admin/audit-logs', authRequired, adminRequired, async (req, res) => {
+app.get('/api/admin/audit-logs', authRequired, adminRequired, asyncHandler(async (req, res) => {
   const result = await query(
     `
     SELECT
@@ -779,9 +801,9 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, async (req, res) =
   )
 
   res.json(result.rows)
-})
+}))
 
-app.post('/api/admin/seed-database', async (req, res) => {
+app.post('/api/admin/seed-database', asyncHandler(async (req, res) => {
   const seedSecret = req.headers['x-seed-secret']
 
   if (seedSecret !== process.env.SEED_SECRET) {
@@ -807,7 +829,6 @@ app.post('/api/admin/seed-database', async (req, res) => {
     const events = [
       [1, 'SeatGate X Trial', 'Audit Control Theatre', 'Friday, Apr 25, 2026', 'seatgate-trial.png'],
       [2, 'SeatGate X Main', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'seatgate-main.png'],
-      [3, 'SeatGate X Post', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'seatgate-post.png'],
     ]
 
     for (const event of events) {
@@ -872,9 +893,9 @@ app.post('/api/admin/seed-database', async (req, res) => {
     console.error(error)
     res.status(500).json({ error: 'Database seed failed', detail: error.message })
   }
-})
+}))
 
-app.get('/api/admin/ticket-types', authRequired, adminRequired, async (req, res) => {
+app.get('/api/admin/ticket-types', authRequired, adminRequired, asyncHandler(async (req, res) => {
   const result = await query(
     `
     SELECT
@@ -891,6 +912,7 @@ app.get('/api/admin/ticket-types', authRequired, adminRequired, async (req, res)
     FROM ticket_types
     JOIN events
       ON events.id = ticket_types.event_id
+    WHERE events.id IN (1, 2)
     ORDER BY
       events.id,
       ticket_types.price,
@@ -912,11 +934,58 @@ app.get('/api/admin/ticket-types', authRequired, adminRequired, async (req, res)
       isReleased: row.is_released,
     }))
   )
+}))
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found' })
 })
 
-// Support SPA routing: redirect all non-API requests to index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'))
+if (hasBuiltFrontend) {
+  app.get('*', (req, res) => {
+    res.sendFile(indexPath)
+  })
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      ok: true,
+      service: 'acc3202-ticketing-api',
+      frontendUrl: 'https://hunternbh.github.io/acc3202-ticketing-bot/',
+    })
+  })
+
+  app.get('*', (req, res) => {
+    res.status(404).json({
+      error: 'Frontend build is not deployed on this Render service.',
+      frontendUrl: 'https://hunternbh.github.io/acc3202-ticketing-bot/',
+    })
+  })
+}
+
+app.use((error, req, res, next) => {
+  console.error(error)
+
+  if (res.headersSent) {
+    return next(error)
+  }
+
+  const statusCode = Number(error.status || error.statusCode) || 500
+  const safeStatusCode = statusCode >= 400 && statusCode < 600 ? statusCode : 500
+  const isDatabaseError = Boolean(
+    error.isDatabaseError ||
+      error.code ||
+      error.routine ||
+      error.severity ||
+      error.stack?.includes('pg-pool')
+  )
+
+  res.status(safeStatusCode).json({
+    error:
+      safeStatusCode >= 500 && isDatabaseError
+        ? 'Database request failed. Check DATABASE_URL and whether the database has been seeded.'
+        : safeStatusCode >= 500
+          ? 'Server request failed.'
+          : error.message || 'Request failed.',
+  })
 })
 
 app.listen(PORT, () => {

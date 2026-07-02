@@ -17,6 +17,10 @@
         </nav>
 
         <div v-if="currentUser" class="user-box">
+          <RouterLink v-if="currentUser.isAdmin" to="/admin" class="admin-link">
+            Admin
+          </RouterLink>
+
           <RouterLink to="/my-account" class="account-link">
             {{ currentUser.email }}
           </RouterLink>
@@ -53,7 +57,6 @@
             <select v-model="selectedDate">
             <option value="1">Apr 25 1pm</option>
             <option value="2">Apr 25 2pm</option>
-            <option value="3">Apr 25 3pm</option>
           </select>
           </div>
         </div>
@@ -136,6 +139,10 @@ function loadStoredUser() {
 
 function setCurrentUser(user) {
   currentUser.value = user
+
+  if (user?.isAdmin) {
+    router.push('/admin')
+  }
 }
 
 function logout() {
@@ -434,15 +441,24 @@ input {
   }
 }
 
-.account-link {
+.account-link,
+.admin-link {
   color: white;
   font-size: 15px;
   font-weight: 800;
   text-decoration: none;
 }
 
-.account-link:hover {
+.account-link:hover,
+.admin-link:hover {
   text-decoration: underline;
+}
+
+.admin-link {
+  background: white;
+  color: #0057ff;
+  padding: 8px 12px;
+  border-radius: 999px;
 }
 
 .wallet {

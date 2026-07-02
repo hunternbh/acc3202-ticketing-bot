@@ -3,7 +3,7 @@
     <SiteHeader :show-title="false" :show-search="false" />
 
     <section class="city-hero">
-      <img src="/nyc.jpg" alt="New York City skyline" class="hero-bg" />
+      <img :src="`${baseUrl}nyc.jpg`" alt="New York City skyline" class="hero-bg" />
       <div class="hero-shade"></div>
 
       <div class="city-content">
@@ -32,7 +32,7 @@
             >
               <div class="image-wrap">
                 <img :src="event.image" :alt="event.title" />
-                <span class="today-badge">▣ TODAY</span>
+                <span class="today-badge">TODAY</span>
               </div>
 
               <div class="event-meta">{{ event.date }}</div>
@@ -51,28 +51,22 @@ import { useRouter } from 'vue-router'
 import SiteHeader from '../components/SiteHeader.vue'
 
 const router = useRouter()
+const baseUrl = import.meta.env.BASE_URL
 
 const events = [
   {
     id: 1,
     title: 'SeatGate X Trial',
-    image: `${import.meta.env.BASE_URL}seatgate-trial.png`,
-    date: 'Apr 25 · Sat · 1:00 PM',
+    image: `${baseUrl}seatgate-trial.png`,
+    date: 'Apr 25 - Sat - 1:00 PM',
     venue: 'Audit Control Theatre',
   },
   {
     id: 2,
     title: 'SeatGate X Main',
-    image: `${import.meta.env.BASE_URL}seatgate-main.png`,
-    date: 'Apr 25 · Sat · 2:00 PM',
+    image: `${baseUrl}seatgate-main.png`,
+    date: 'Apr 25 - Sat - 2:00 PM',
     venue: 'Revenue Recognition Hall',
-  },
-  {
-    id: 3,
-    title: 'SeatGate X Post',
-    image: `${import.meta.env.BASE_URL}seatgate-post.png`,
-    date: 'Apr 25 · Sat · 3:00 PM',
-    venue: 'Bot Detection Center',
   },
 ]
 
@@ -145,7 +139,7 @@ h1 {
   line-height: 0.95;
   margin: 0;
   font-weight: 900;
-  letter-spacing: -3px;
+  letter-spacing: 0;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
 }
 
@@ -185,7 +179,7 @@ h2 {
 
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
 
@@ -209,7 +203,6 @@ h2 {
   display: block;
 }
 
-/* small blue "TODAY" tag */
 .today-badge {
   position: absolute;
   left: 8px;

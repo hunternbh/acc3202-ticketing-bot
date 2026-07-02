@@ -36,7 +36,6 @@ async function run() {
   const events = [
     [1, 'SeatGate X Trial', 'Audit Control Theatre', 'Friday, Apr 25, 2026', 'seatgate-trial.png'],
     [2, 'SeatGate X Main', 'Revenue Recognition Hall', 'Friday, Apr 25, 2026', 'seatgate-main.png'],
-    [3, 'SeatGate X Post', 'Bot Detection Center', 'Friday, Apr 25, 2026', 'seatgate-post.png'],
   ]
 
   for (const event of events) {

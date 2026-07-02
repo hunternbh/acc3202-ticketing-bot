@@ -23,7 +23,7 @@ const baseUrl = import.meta.env.BASE_URL
 const router = useRouter()
 
 function goTickets() {
-  router.push('/tickets')
+  router.push('/concerts')
 }
 </script>
 
