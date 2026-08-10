@@ -2,7 +2,8 @@ export const seedUsers = [
   { email: 'fakebuyer', password: 'password', walletBalance: 79, isAdmin: false, isInstructor: false },
   { email: 'admin', password: 'adminpass', walletBalance: 5, isAdmin: true, isInstructor: false },
   { email: 'instructor', password: 'password', walletBalance: 3, isAdmin: false, isInstructor: true },
-
+  { email: 'cindy', password: 'cindy', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'luga', password: 'luga', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'xiaohualei', password: 'xiaohualei', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'katywangbai', password: 'katywangbai', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'mikelian', password: 'mikelian', walletBalance: 3, isAdmin: false, isInstructor: false },
