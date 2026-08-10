@@ -86,6 +86,7 @@ try {
     const eventId = event[0]
     const price = eventId === 1 ? 0 : 1
     const releasedQuantity = eventId === 1 ? 99999 : 0
+    const ticketName = eventId === 1 ? 'Trial Tickets' : 'Main Tickets'
 
     await client.query(
       `
@@ -93,9 +94,9 @@ try {
         (event_id, name, price, total_quantity,
          released_quantity, sold_quantity, is_released)
       VALUES
-        ($1, 'Main Tickets', $2, 99999, $3, 0, $4)
+        ($1, $2, $3, 99999, $4, 0, $5)
       `,
-      [eventId, price, releasedQuantity, releasedQuantity > 0]
+      [eventId, ticketName, price, releasedQuantity, releasedQuantity > 0]
     )
   }
 

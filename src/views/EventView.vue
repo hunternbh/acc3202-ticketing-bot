@@ -53,7 +53,7 @@
             <li>Live performance experience at the listed New York City venue.</li>
             <li>Doors open before the scheduled event time shown above.</li>
             <li>Tickets are available in limited quantities and may sell out before checkout.</li>
-            <li>Main Tickets are the only ticket type for this event.</li>
+            <li>{{ event.id === 1 ? 'Trial Tickets' : 'Main Tickets' }} are the only ticket type for this event.</li>
             <li>All ticket selections are subject to availability at the time of purchase.</li>
           </ul>
         </div>
