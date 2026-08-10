@@ -119,12 +119,6 @@ Set it as:
 DATABASE_URL
 ```
 
-### SEED_SECRET
-
-Set a `SEED_SECRET`.
-
-Remember this value. You will use it later to reset the database.
-
 ---
 
 ## 8. Update the GitHub Pages Base Path
@@ -206,18 +200,19 @@ https://reqbin.com/curl
 
 ---
 
-## 12. Seed the Database
+## 12. Initialize the Database Once
 
-Seed the database first.
+The database starts empty, so run the initialization workflow once before the first login.
 
-Seeding automatically resets all previously bought tickets and releases 999 tickets for the trial event.
+1. In Render, copy the PostgreSQL **External Database URL**. The Internal Database URL only works inside Render.
+2. In GitHub, open **Settings > Secrets and variables > Actions**.
+3. Create a repository secret named `DATABASE_URL` and paste the External Database URL as its value.
+4. Open **Actions > Initialize Database > Run workflow**.
+5. Enter `INITIALIZE` in the confirmation field and run the workflow.
 
-You will need your:
+The workflow creates the schema, users, events, tickets, and fake purchase. It refuses to run when any application table already exists, so it cannot be used to reset a populated database accidentally.
 
-```text
-Backend URL
-SEED_SECRET
-```
+After initialization, use the **Reset Database** button in the admin page for intentional resets. The server does not initialize or reset the database when it starts.
 
 ---
 
@@ -278,9 +273,12 @@ https://acc3202-ticketing-bot.onrender.com
 ## Default Values
 
 ```text
-SEED_SECRET: hunter-seed-2026-private
-Admin email: admin@seatgate-ticket.com
+Admin username: admin
 Admin password: adminpass
+Instructor username: instructor
+Instructor password: password
+Student usernames: student01 through student53
+Student password: password
 ```
 
 ---
@@ -289,27 +287,25 @@ Admin password: adminpass
 
 - Event 1 has tickets priced at **$0**.
 - Events 2–5 have tickets priced at **$1 each**.
-- Change the user list in `server/users.js` before reseeding.
+- Change the user list in `server/users.js` before resetting.
 - The GitHub cron job pings the Render app every 5 minutes because the free Render server may sleep.
 - These commands are written for **ReqBin cURL**, not Windows CMD and not PowerShell.
 - Paste each command into ReqBin’s cURL command box.
 
 ---
 
-## 1. Reseed Database
+## 1. Initialize or Reset the Database
 
-This clears and reseeds the database using the user list currently defined in `index.js`.
+For a new blank database, run the **Initialize Database** GitHub Actions workflow described in Step 12 above. This only needs to be done once.
 
-```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/admin/seed-database" -H "x-seed-secret: hunter-seed-2026-private"
-```
+For an initialized database, log in as admin and use the **Reset Database** button.
 
 ---
 
 ## 2. Login as Admin
 
 ```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"email":"admin@seatgate-ticket.com","password":"adminpass"}'
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"username":"admin","password":"adminpass"}'
 ```
 
 The command should return something like this:
@@ -371,10 +367,10 @@ PASTE_TOKEN_HERE
 
 with the actual token.
 
-- If login fails, check whether the admin email in `index.js` is:
+- If login fails, check whether the admin username in `server/users.js` is:
 
 ```text
-admin@seatgate-ticket.com
+admin
 ```
 
-Use the email that appears in your seed data.
+Use the username that appears in your seed data.

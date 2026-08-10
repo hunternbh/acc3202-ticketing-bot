@@ -5,16 +5,16 @@
 
       <h1>Sign In</h1>
       <p class="subtitle">
-        Use the email and password assigned by the instructor.
+        Use the username and password assigned by the instructor.
       </p>
 
       <form @submit.prevent="handleLogin">
-        <label>Email</label>
+        <label>Username</label>
         <input
-          v-model="email"
-          type="email"
-          placeholder="student01@seatgate-ticket.com"
-          autocomplete="email"
+          v-model="username"
+          type="text"
+          placeholder="student01"
+          autocomplete="username"
         />
 
         <label>Password</label>
@@ -46,7 +46,7 @@ import { ref } from 'vue'
 
 const emit = defineEmits(['close', 'login-success'])
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const errorMessage = ref('')
 
@@ -77,7 +77,7 @@ async function handleLogin() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: email.value.trim(),
+        username: username.value.trim(),
         password: password.value,
       }),
     })

@@ -20,7 +20,7 @@ app.set('trust proxy', true)
 app.use(cors({
   origin: 'https://hunternbh.github.io',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
 app.use(express.json())
@@ -36,6 +36,7 @@ if (hasBuiltFrontend) {
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
 const MAX_TICKETS_PER_EVENT = 5
+let instructorRoleMigration = null
 
 function asyncHandler(handler) {
   return function wrappedAsyncHandler(req, res, next) {
@@ -91,7 +92,7 @@ function rateLimit({
 }
 
 function createToken(user) {
-  const data = `${user.id}:${user.is_admin ? 1 : 0}`
+  const data = `${user.id}:${user.is_admin ? 1 : 0}:${user.is_instructor ? 1 : 0}`
   const hmac = crypto.createHmac('sha256', JWT_SECRET).update(data).digest('hex').slice(0, 10)
   return `${data}:${hmac}`
 }
@@ -102,16 +103,21 @@ function getBearerToken(req) {
 }
 
 function parseAuthToken(token) {
-  const [id, isAdmin, hmac] = token.split(':')
-  const expectedHmac = crypto.createHmac('sha256', JWT_SECRET).update(`${id}:${isAdmin}`).digest('hex').slice(0, 10)
+  const [id, isAdmin, isInstructor, hmac] = token.split(':')
+  const expectedHmac = crypto
+    .createHmac('sha256', JWT_SECRET)
+    .update(`${id}:${isAdmin}:${isInstructor}`)
+    .digest('hex')
+    .slice(0, 10)
 
-  if (!id || !isAdmin || hmac !== expectedHmac) {
+  if (!id || !isAdmin || !isInstructor || hmac !== expectedHmac) {
     throw new Error('Invalid token')
   }
 
   return {
     id: parseInt(id, 10),
-    isAdmin: isAdmin === '1'
+    isAdmin: isAdmin === '1',
+    isInstructor: isInstructor === '1',
   }
 }
 
@@ -145,19 +151,25 @@ function adminRequired(req, res, next) {
   next()
 }
 
-function seedSecretRequired(req, res, next) {
-  const seedSecret = req.headers['x-seed-secret']
-
-  if (!process.env.SEED_SECRET) {
-    return res.status(503).json({ error: 'Seed secret is not configured on the server' })
+function ensureInstructorRoleColumn() {
+  if (!instructorRoleMigration) {
+    instructorRoleMigration = query(
+      `
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS is_instructor BOOLEAN NOT NULL DEFAULT FALSE
+      `
+    ).catch((error) => {
+      instructorRoleMigration = null
+      throw error
+    })
   }
 
-  if (!seedSecret) {
-    return res.status(400).json({ error: 'Seed secret is required' })
-  }
+  return instructorRoleMigration
+}
 
-  if (seedSecret !== process.env.SEED_SECRET) {
-    return res.status(403).json({ error: 'Invalid seed secret' })
+function instructorRequired(req, res, next) {
+  if (!req.user?.isInstructor) {
+    return res.status(403).json({ error: 'Instructor access required' })
   }
 
   next()
@@ -236,8 +248,8 @@ async function writeAuditLog({
   metadata = {},
   ip = null,
   userAgent = null,
-}) {
-  await query(
+}, queryExecutor = query) {
+  await queryExecutor(
     `
     INSERT INTO audit_logs
       (user_id, action, event_id, ticket_type_id, success, metadata, ip_address, user_agent)
@@ -264,19 +276,22 @@ app.get('/api/health/db', asyncHandler(async (req, res) => {
 }))
 
 app.post('/api/login', asyncHandler(async (req, res) => {
-  const { email, password } = req.body
+  const username = req.body.username ?? req.body.email
+  const { password } = req.body
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' })
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' })
   }
+
+  await ensureInstructorRoleColumn()
 
   const result = await query(
     `
-    SELECT id, email, password_hash, wallet_balance, is_admin
+    SELECT id, email, password_hash, wallet_balance, is_admin, is_instructor
     FROM users
     WHERE LOWER(email) = LOWER($1)
     `,
-    [email]
+    [username]
   )
 
   const user = result.rows[0]
@@ -285,12 +300,12 @@ app.post('/api/login', asyncHandler(async (req, res) => {
     await writeAuditLog({
       action: 'LOGIN_FAILED',
       success: false,
-      metadata: { email, reason: 'unknown_email' },
+      metadata: { username, reason: 'unknown_username' },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     })
 
-    return res.status(401).json({ error: 'Invalid email or password' })
+    return res.status(401).json({ error: 'Invalid username or password' })
   }
 
   const ok = await bcrypt.compare(password, user.password_hash)
@@ -300,19 +315,19 @@ app.post('/api/login', asyncHandler(async (req, res) => {
       userId: user.id,
       action: 'LOGIN_FAILED',
       success: false,
-      metadata: { email, reason: 'bad_password' },
+      metadata: { username, reason: 'bad_password' },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     })
 
-    return res.status(401).json({ error: 'Invalid email or password' })
+    return res.status(401).json({ error: 'Invalid username or password' })
   }
 
   await writeAuditLog({
     userId: user.id,
     action: 'LOGIN_SUCCESS',
     success: true,
-    metadata: { email },
+    metadata: { username },
     ip: req.ip,
     userAgent: req.headers['user-agent'],
   })
@@ -326,6 +341,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
       email: user.email,
       walletBalance: Number(user.wallet_balance),
       isAdmin: user.is_admin,
+      isInstructor: user.is_instructor,
     },
   })
 }))
@@ -333,7 +349,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
 app.get('/api/me', authRequired, userTwoPerSecond, asyncHandler(async (req, res) => {
   const result = await query(
     `
-    SELECT id, email, wallet_balance, is_admin
+    SELECT id, email, wallet_balance, is_admin, is_instructor
     FROM users
     WHERE id = $1
     `,
@@ -351,8 +367,13 @@ app.get('/api/me', authRequired, userTwoPerSecond, asyncHandler(async (req, res)
     email: user.email,
     walletBalance: Number(user.wallet_balance),
     isAdmin: user.is_admin,
+    isInstructor: user.is_instructor,
   })
 }))
+
+app.get('/api/instructor/access', authRequired, instructorRequired, (req, res) => {
+  res.json({ ok: true })
+})
 
 app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
   const eventId = Number(req.params.eventId)
@@ -389,7 +410,6 @@ app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
     FROM ticket_types
     WHERE event_id = $1
     ORDER BY
-      CASE WHEN name = 'Main Tickets' THEN 0 ELSE 1 END,
       is_released DESC,
       GREATEST(released_quantity - sold_quantity, 0) DESC,
       price ASC,
@@ -405,7 +425,7 @@ app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
     tickets: mainTicket ? [mainTicket].map((ticket) => ({
       id: ticket.id,
       eventId: ticket.event_id,
-      name: 'Main Tickets',
+      name: ticket.name,
       price: Number(ticket.price),
       totalQuantity: ticket.total_quantity,
       releasedQuantity: ticket.released_quantity,
@@ -447,6 +467,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
   const requestedQuantity = cleanItems.reduce((sum, item) => sum + item.quantity, 0)
 
   const client = await getClient()
+  const clientQuery = client.query.bind(client)
 
   try {
     await client.query('BEGIN')
@@ -502,7 +523,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
         },
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-      })
+      }, clientQuery)
 
       return res.status(400).json({
         error: `Each user is limited to ${MAX_TICKETS_PER_EVENT} tickets per event`,
@@ -549,7 +570,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
           ticketTypeId: item.ticketTypeId,
           success: false,
           metadata: { reason: 'ticket_type_not_found', item },
-        })
+        }, clientQuery)
 
         return res.status(400).json({ error: 'Invalid ticket type' })
       }
@@ -564,7 +585,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
           ticketTypeId: item.ticketTypeId,
           success: false,
           metadata: { reason: 'ticket_not_released', item },
-        })
+        }, clientQuery)
 
         return res.status(400).json({ error: `${ticket.name} has not been released yet` })
       }
@@ -585,7 +606,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
             requested: item.quantity,
             available,
           },
-        })
+        }, clientQuery)
 
         return res.status(400).json({ error: `${ticket.name} is sold out or has insufficient quantity` })
       }
@@ -606,7 +627,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
           walletBalance: Number(user.wallet_balance),
           total,
         },
-      })
+      }, clientQuery)
 
       return res.status(400).json({
         error: 'Insufficient wallet balance',
@@ -659,8 +680,6 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       [total, req.user.id]
     )
 
-    await client.query('COMMIT')
-
     await writeAuditLog({
       userId: req.user.id,
       action: 'PURCHASE_SUCCESS',
@@ -673,7 +692,9 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
-    })
+    }, clientQuery)
+
+    await client.query('COMMIT')
 
     res.json({
       success: true,
@@ -691,7 +712,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       eventId,
       success: false,
       metadata: { error: error.message },
-    })
+    }, clientQuery)
 
     res.status(500).json({ error: 'Purchase failed unexpectedly' })
   } finally {
@@ -787,7 +808,6 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
       ON ticket_types.id = purchase_items.ticket_type_id
     LEFT JOIN events
       ON events.id = purchases.event_id
-    WHERE users.is_admin = FALSE
     GROUP BY
       users.id,
       users.email,
@@ -826,6 +846,7 @@ app.get('/api/admin/revenue', authRequired, adminRequired, asyncHandler(async (r
       ON events.id = purchases.event_id
     WHERE purchases.status = 'SUCCESS'
       AND users.is_admin = FALSE
+      AND users.is_instructor = FALSE
     GROUP BY
       users.email,
       events.title,
@@ -866,7 +887,7 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, asyncHandler(async
   res.json(result.rows)
 }))
 
-app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequired, asyncHandler(async (req, res) => {
+app.post('/api/admin/reset-database', authRequired, adminRequired, asyncHandler(async (req, res) => {
   try {
     const schema = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8')
     await query(schema)
@@ -876,10 +897,10 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
 
       await query(
         `
-        INSERT INTO users (email, password_hash, wallet_balance, is_admin)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (email, password_hash, wallet_balance, is_admin, is_instructor)
+        VALUES ($1, $2, $3, $4, $5)
         `,
-        [user.email, passwordHash, user.walletBalance ?? 3.0, user.isAdmin]
+        [user.email, passwordHash, user.walletBalance ?? 3.0, user.isAdmin, user.isInstructor]
       )
     }
 
@@ -902,15 +923,16 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
       const eventId = event[0]
       const price = eventId === 1 ? 0.00 : 1.00
       const releasedQuantity = eventId === 1 ? 99999 : 0
+      const ticketName = eventId === 1 ? 'Trial Tickets' : 'Main Tickets'
 
       await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Main Tickets', $2, 99999, $3, 0, $4)
+        ($1, $2, $3, 99999, $4, 0, $5)
         `,
-        [eventId, price, releasedQuantity, releasedQuantity > 0]
+        [eventId, ticketName, price, releasedQuantity, releasedQuantity > 0]
       )
     }
 
@@ -919,7 +941,7 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
       INSERT INTO purchases (user_id, event_id, total_amount, status, ip_address, user_agent)
       SELECT id, 2, 20.00, 'SUCCESS', 'seed', 'database seed'
       FROM users
-      WHERE email = 'fake-main-buyer@seatgate-ticket.com'
+      WHERE email = 'fakebuyer'
       RETURNING id
       `
     )
@@ -948,7 +970,7 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
 
     await writeAuditLog({
       userId: null,
-      action: 'ADMIN_RESEED_DATABASE',
+      action: 'ADMIN_RESET_DATABASE',
       success: true,
       metadata: {
         requestedBy: 'admin',
@@ -958,10 +980,10 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
       userAgent: req.headers['user-agent'],
     })
 
-    res.json({ success: true, message: 'Database seeded successfully.' })
+    res.json({ success: true, message: 'Database reset successfully.' })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'Database seed failed', detail: error.message })
+    res.status(500).json({ error: 'Database reset failed', detail: error.message })
   }
 }))
 

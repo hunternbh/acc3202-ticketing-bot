@@ -25,8 +25,8 @@
       <div v-else class="admin-content">
         <section class="summary-row" aria-label="Admin summary">
           <div>
-            <div class="label">Students</div>
-            <div class="summary-number">{{ uniqueStudentCount }}</div>
+            <div class="label">Users</div>
+            <div class="summary-number">{{ uniqueUserCount }}</div>
           </div>
 
           <div>
@@ -40,34 +40,28 @@
           </div>
 
           <div>
-            <div class="label">Available</div>
-            <div class="summary-number">{{ availableTickets }}</div>
+            <div class="label">Trial Available</div>
+            <div class="summary-number">{{ trialAvailableTickets }}</div>
+          </div>
+
+          <div>
+            <div class="label">Main Available</div>
+            <div class="summary-number">{{ mainAvailableTickets }}</div>
           </div>
         </section>
 
         <section class="admin-section">
           <div class="section-heading">
-            <h2>Reseed Database</h2>
-            <span>Seed secret required</span>
+            <h2>Reset Database</h2>
           </div>
 
-          <form class="reseed-form" @submit.prevent="reseedDatabase">
-            <label>
-              Seed Secret
-              <input
-                v-model="seedSecret"
-                type="password"
-                autocomplete="off"
-                placeholder="Enter seed secret"
-              />
-            </label>
-
+          <form class="reseed-form" @submit.prevent="resetDatabase">
             <button
               type="submit"
               class="danger-button"
-              :disabled="seedLoading || !seedSecret.trim()"
+              :disabled="seedLoading"
             >
-              {{ seedLoading ? 'Reseeding...' : 'Reseed' }}
+              {{ seedLoading ? 'Resetting...' : 'Reset Database' }}
             </button>
           </form>
 
@@ -152,13 +146,13 @@
 
         <section class="admin-section">
           <div class="section-heading">
-            <h2>Student Ticket Holdings</h2>
+            <h2>All User Ticket Holdings</h2>
           </div>
 
           <div class="table-wrap">
             <div class="holdings-table table">
               <div class="table-header">
-                <div>Email</div>
+                <div>Username</div>
                 <div>Wallet</div>
                 <div>Event</div>
                 <div>Ticket Type</div>
@@ -190,7 +184,7 @@
           <div class="table-wrap">
             <div class="revenue-table table">
               <div class="table-header">
-                <div>Email</div>
+                <div>Username</div>
                 <div>Event</div>
                 <div>Ticket Type</div>
                 <div>Qty</div>
@@ -274,9 +268,8 @@ const auditLogs = ref([])
 const currentUser = ref(null)
 const selectedTicketTypeId = ref('')
 const additionalQuantity = ref(10)
-const seedSecret = ref('')
 
-const uniqueStudentCount = computed(() => {
+const uniqueUserCount = computed(() => {
   return new Set(holdings.value.map((row) => row.email)).size
 })
 
@@ -292,9 +285,19 @@ const totalRevenue = computed(() => {
   }, 0)
 })
 
-const availableTickets = computed(() => {
+const trialAvailableTickets = computed(() => {
   return ticketTypes.value.reduce((sum, ticket) => {
-    return sum + Number(ticket.availableQuantity || 0)
+    return ticket.eventId === 1
+      ? sum + Number(ticket.availableQuantity || 0)
+      : sum
+  }, 0)
+})
+
+const mainAvailableTickets = computed(() => {
+  return ticketTypes.value.reduce((sum, ticket) => {
+    return ticket.eventId === 2
+      ? sum + Number(ticket.availableQuantity || 0)
+      : sum
   }, 0)
 })
 
@@ -449,18 +452,11 @@ async function releaseTickets() {
   }
 }
 
-async function reseedDatabase() {
+async function resetDatabase() {
   seedMessage.value = ''
 
-  const secret = seedSecret.value.trim()
-
-  if (!secret) {
-    seedMessage.value = 'Enter the seed secret.'
-    return
-  }
-
   const confirmed = window.confirm(
-    'Reseeding will reset users, tickets, purchases, and audit logs. Continue?'
+    'This will reset users, tickets, purchases, and audit logs. Continue?'
   )
 
   if (!confirmed) return
@@ -468,18 +464,14 @@ async function reseedDatabase() {
   seedLoading.value = true
 
   try {
-    const data = await fetchAdminJson('/api/admin/seed-database', {
+    const data = await fetchAdminJson('/api/admin/reset-database', {
       method: 'POST',
-      headers: {
-        'x-seed-secret': secret,
-      },
     })
 
-    seedSecret.value = ''
     await loadDashboard()
-    seedMessage.value = data.message || 'Database seeded successfully.'
+    seedMessage.value = data.message || 'Database reset successfully.'
   } catch (error) {
-    seedMessage.value = error.message || 'Could not reseed the database.'
+    seedMessage.value = error.message || 'Could not reset the database.'
   } finally {
     seedLoading.value = false
   }
@@ -567,7 +559,7 @@ function formatTime(value) {
 
 .summary-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   background: white;
   border: 1px solid #d8d8d8;
 }
@@ -629,15 +621,11 @@ function formatTime(value) {
 }
 
 .reseed-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: end;
+  display: flex;
   padding: 22px;
 }
 
-.release-form label,
-.reseed-form label {
+.release-form label {
   display: grid;
   gap: 7px;
   font-size: 13px;
@@ -647,8 +635,7 @@ function formatTime(value) {
 }
 
 .release-form select,
-.release-form input,
-.reseed-form input {
+.release-form input {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #bfc7d3;

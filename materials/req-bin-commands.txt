@@ -18,9 +18,12 @@ https://acc3202-ticketing-bot.onrender.com
 Default values:
 
 ```text
-SEED_SECRET: hunter-seed-2026-private
-Admin email: admin@seatgate-ticket.com
+Admin username: admin
 Admin password: adminpass
+Instructor username: instructor
+Instructor password: password
+Student usernames: student01 through student53
+Student password: password
 ```
 
 ---
@@ -29,27 +32,25 @@ Admin password: adminpass
 
 - Event 1 has tickets priced at **$0**.
 - Events 2–5 have tickets priced at **$1 each**.
-- Change the user list in `index.js` before reseeding.
+- Change the user list in `server/users.js` before resetting.
 - The GitHub cron job pings the Render app every 5 minutes because the free Render server may sleep.
 - These commands are written for **ReqBin cURL**, not Windows CMD and not PowerShell.
 - Paste each command into ReqBin’s cURL command box.
 
 ---
 
-## 1. Reseed Database
+## 1. Initialize or Reset the Database
 
-This clears and reseeds the database using the user list currently defined in `index.js`.
+For a new blank database, run the **Initialize Database** GitHub Actions workflow once.
 
-```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/admin/seed-database" -H "x-seed-secret: hunter-seed-2026-private"
-```
+For an initialized database, log in as admin and use the **Reset Database** button.
 
 ---
 
 ## 2. Login as Admin
 
 ```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"email":"admin@seatgate-ticket.com","password":"adminpass"}'
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"username":"admin","password":"adminpass"}'
 ```
 
 The command should return something like this:
@@ -111,8 +112,8 @@ PASTE_TOKEN_HERE
 
 with the actual token.
 
-- If login fails, check whether the admin email in `index.js` is:
+- If login fails, check whether the admin username in `server/users.js` is:
 
 ```text
-admin@seatgate-ticket.com
+admin
 ```
