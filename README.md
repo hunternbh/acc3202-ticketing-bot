@@ -10,12 +10,16 @@ The purpose of this case is to help students understand IT audit risk, internal 
 
 # ACC3202 Ticketing Bot: Instructor Command Sheet
 
-## Instructional Video
+## Instructional Videos
 
-(https://www.youtube.com/watch?v=gP3dJlWociM)
+- [Instructor setup video](https://youtu.be/wHpjUpBzZMc)
+- [Class briefing video](https://youtu.be/hIh2D8scudc)
 
-## Materials
-(https://github.com/hunternbh/acc3202-ticketing-bot/tree/main/materials)
+## Student Materials
+
+- [SeatGate Student Case Deck](materials/SeatGate_Student_Case_Deck_Expanded.pptx)
+- [SeatGate Student Worksheet](materials/SeatGate_Student_Worksheet_Updated.docx)
+- [Browse all repository materials](https://github.com/hunternbh/acc3202-ticketing-bot/tree/main/materials)
 
 ---
 
