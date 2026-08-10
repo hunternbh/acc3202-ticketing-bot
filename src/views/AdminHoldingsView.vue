@@ -48,24 +48,13 @@
         <section class="admin-section">
           <div class="section-heading">
             <h2>Reset Database</h2>
-            <span>Seed secret required</span>
           </div>
 
           <form class="reseed-form" @submit.prevent="resetDatabase">
-            <label>
-              Seed Secret
-              <input
-                v-model="seedSecret"
-                type="password"
-                autocomplete="off"
-                placeholder="Enter seed secret"
-              />
-            </label>
-
             <button
               type="submit"
               class="danger-button"
-              :disabled="seedLoading || !seedSecret.trim()"
+              :disabled="seedLoading"
             >
               {{ seedLoading ? 'Resetting...' : 'Reset Database' }}
             </button>
@@ -274,7 +263,6 @@ const auditLogs = ref([])
 const currentUser = ref(null)
 const selectedTicketTypeId = ref('')
 const additionalQuantity = ref(10)
-const seedSecret = ref('')
 
 const uniqueStudentCount = computed(() => {
   return new Set(holdings.value.map((row) => row.email)).size
@@ -452,13 +440,6 @@ async function releaseTickets() {
 async function resetDatabase() {
   seedMessage.value = ''
 
-  const secret = seedSecret.value.trim()
-
-  if (!secret) {
-    seedMessage.value = 'Enter the seed secret.'
-    return
-  }
-
   const confirmed = window.confirm(
     'This will reset users, tickets, purchases, and audit logs. Continue?'
   )
@@ -470,16 +451,12 @@ async function resetDatabase() {
   try {
     const data = await fetchAdminJson('/api/admin/reset-database', {
       method: 'POST',
-      headers: {
-        'x-seed-secret': secret,
-      },
     })
 
-    seedSecret.value = ''
     await loadDashboard()
     seedMessage.value = data.message || 'Database reset successfully.'
   } catch (error) {
-    seedMessage.value = error.message || 'Could not reseed the database.'
+    seedMessage.value = error.message || 'Could not reset the database.'
   } finally {
     seedLoading.value = false
   }
@@ -629,15 +606,11 @@ function formatTime(value) {
 }
 
 .reseed-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: end;
+  display: flex;
   padding: 22px;
 }
 
-.release-form label,
-.reseed-form label {
+.release-form label {
   display: grid;
   gap: 7px;
   font-size: 13px;
@@ -647,8 +620,7 @@ function formatTime(value) {
 }
 
 .release-form select,
-.release-form input,
-.reseed-form input {
+.release-form input {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #bfc7d3;

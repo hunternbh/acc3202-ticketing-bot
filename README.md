@@ -115,12 +115,6 @@ Set it as:
 DATABASE_URL
 ```
 
-### SEED_SECRET
-
-Set a `SEED_SECRET`.
-
-Remember this value. You will use it later to reset the database.
-
 ---
 
 ## 8. Update the GitHub Pages Base Path
@@ -275,7 +269,6 @@ https://acc3202-ticketing-bot.onrender.com
 ## Default Values
 
 ```text
-SEED_SECRET: hunter-seed-2026-private
 Admin email: admin@seatgate-ticket.com
 Admin password: adminpass
 ```
@@ -286,7 +279,7 @@ Admin password: adminpass
 
 - Event 1 has tickets priced at **$0**.
 - Events 2–5 have tickets priced at **$1 each**.
-- Change the user list in `server/users.js` before reseeding.
+- Change the user list in `server/users.js` before resetting.
 - The GitHub cron job pings the Render app every 5 minutes because the free Render server may sleep.
 - These commands are written for **ReqBin cURL**, not Windows CMD and not PowerShell.
 - Paste each command into ReqBin’s cURL command box.
@@ -297,7 +290,7 @@ Admin password: adminpass
 
 For a new blank database, run the **Initialize Database** GitHub Actions workflow described in Step 12 above. This only needs to be done once.
 
-For an initialized database, log in as admin and use the **Reset Database** button. Resetting requires both the admin login and the `SEED_SECRET` configured in Render.
+For an initialized database, log in as admin and use the **Reset Database** button.
 
 ---
 

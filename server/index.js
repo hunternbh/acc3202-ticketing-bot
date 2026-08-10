@@ -20,7 +20,7 @@ app.set('trust proxy', true)
 app.use(cors({
   origin: 'https://hunternbh.github.io',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-seed-secret'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
 app.use(express.json())
@@ -140,24 +140,6 @@ const userTwoPerSecond = rateLimit({
 function adminRequired(req, res, next) {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: 'Admin access required' })
-  }
-
-  next()
-}
-
-function seedSecretRequired(req, res, next) {
-  const seedSecret = req.headers['x-seed-secret']
-
-  if (!process.env.SEED_SECRET) {
-    return res.status(503).json({ error: 'Seed secret is not configured on the server' })
-  }
-
-  if (!seedSecret) {
-    return res.status(400).json({ error: 'Seed secret is required' })
-  }
-
-  if (seedSecret !== process.env.SEED_SECRET) {
-    return res.status(403).json({ error: 'Invalid seed secret' })
   }
 
   next()
@@ -866,7 +848,7 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, asyncHandler(async
   res.json(result.rows)
 }))
 
-app.post('/api/admin/reset-database', authRequired, adminRequired, seedSecretRequired, asyncHandler(async (req, res) => {
+app.post('/api/admin/reset-database', authRequired, adminRequired, asyncHandler(async (req, res) => {
   try {
     const schema = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8')
     await query(schema)
