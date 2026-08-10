@@ -5,6 +5,8 @@ export const seedUsers = [
   { email: 'cindy', password: 'cindy', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'luga', password: 'luga', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'tatyana', password: 'tatyana', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'sanzana', password: 'sanzana', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'shimon', password: 'shimon', walletBalance: 3, isAdmin: false, isInstructor: false },
   
   { email: 'xiaohualei', password: 'xiaohualei', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'katywangbai', password: 'katywangbai', walletBalance: 3, isAdmin: false, isInstructor: false },
