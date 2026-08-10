@@ -218,8 +218,8 @@ async function writeAuditLog({
   metadata = {},
   ip = null,
   userAgent = null,
-}) {
-  await query(
+}, queryExecutor = query) {
+  await queryExecutor(
     `
     INSERT INTO audit_logs
       (user_id, action, event_id, ticket_type_id, success, metadata, ip_address, user_agent)
@@ -428,6 +428,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
   const requestedQuantity = cleanItems.reduce((sum, item) => sum + item.quantity, 0)
 
   const client = await getClient()
+  const clientQuery = client.query.bind(client)
 
   try {
     await client.query('BEGIN')
@@ -483,7 +484,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
         },
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-      })
+      }, clientQuery)
 
       return res.status(400).json({
         error: `Each user is limited to ${MAX_TICKETS_PER_EVENT} tickets per event`,
@@ -530,7 +531,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
           ticketTypeId: item.ticketTypeId,
           success: false,
           metadata: { reason: 'ticket_type_not_found', item },
-        })
+        }, clientQuery)
 
         return res.status(400).json({ error: 'Invalid ticket type' })
       }
@@ -545,7 +546,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
           ticketTypeId: item.ticketTypeId,
           success: false,
           metadata: { reason: 'ticket_not_released', item },
-        })
+        }, clientQuery)
 
         return res.status(400).json({ error: `${ticket.name} has not been released yet` })
       }
@@ -566,7 +567,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
             requested: item.quantity,
             available,
           },
-        })
+        }, clientQuery)
 
         return res.status(400).json({ error: `${ticket.name} is sold out or has insufficient quantity` })
       }
@@ -587,7 +588,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
           walletBalance: Number(user.wallet_balance),
           total,
         },
-      })
+      }, clientQuery)
 
       return res.status(400).json({
         error: 'Insufficient wallet balance',
@@ -640,8 +641,6 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       [total, req.user.id]
     )
 
-    await client.query('COMMIT')
-
     await writeAuditLog({
       userId: req.user.id,
       action: 'PURCHASE_SUCCESS',
@@ -654,7 +653,9 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
-    })
+    }, clientQuery)
+
+    await client.query('COMMIT')
 
     res.json({
       success: true,
@@ -672,7 +673,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       eventId,
       success: false,
       metadata: { error: error.message },
-    })
+    }, clientQuery)
 
     res.status(500).json({ error: 'Purchase failed unexpectedly' })
   } finally {
