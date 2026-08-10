@@ -202,18 +202,19 @@ https://reqbin.com/curl
 
 ---
 
-## 12. Seed the Database
+## 12. Initialize the Database Once
 
-Seed the database first.
+The database starts empty, so run the initialization workflow once before the first login.
 
-Seeding automatically resets all previously bought tickets and releases 999 tickets for the trial event.
+1. In Render, copy the PostgreSQL **External Database URL**. The Internal Database URL only works inside Render.
+2. In GitHub, open **Settings > Secrets and variables > Actions**.
+3. Create a repository secret named `DATABASE_URL` and paste the External Database URL as its value.
+4. Open **Actions > Initialize Database > Run workflow**.
+5. Enter `INITIALIZE` in the confirmation field and run the workflow.
 
-You will need your:
+The workflow creates the schema, users, events, tickets, and fake purchase. It refuses to run when any application table already exists, so it cannot be used to reset a populated database accidentally.
 
-```text
-Backend URL
-SEED_SECRET
-```
+After initialization, use the **Reset Database** button in the admin page for intentional resets. The server does not initialize or reset the database when it starts.
 
 ---
 
@@ -292,13 +293,11 @@ Admin password: adminpass
 
 ---
 
-## 1. Reseed Database
+## 1. Initialize or Reset the Database
 
-This clears and reseeds the database using the user list currently defined in `index.js`.
+For a new blank database, run the **Initialize Database** GitHub Actions workflow described in Step 12 above. This only needs to be done once.
 
-```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/admin/seed-database" -H "x-seed-secret: hunter-seed-2026-private"
-```
+For an initialized database, log in as admin and use the **Reset Database** button. Resetting requires both the admin login and the `SEED_SECRET` configured in Render.
 
 ---
 

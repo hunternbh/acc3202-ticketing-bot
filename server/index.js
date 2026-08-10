@@ -866,7 +866,7 @@ app.get('/api/admin/audit-logs', authRequired, adminRequired, asyncHandler(async
   res.json(result.rows)
 }))
 
-app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequired, asyncHandler(async (req, res) => {
+app.post('/api/admin/reset-database', authRequired, adminRequired, seedSecretRequired, asyncHandler(async (req, res) => {
   try {
     const schema = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8')
     await query(schema)
@@ -948,7 +948,7 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
 
     await writeAuditLog({
       userId: null,
-      action: 'ADMIN_RESEED_DATABASE',
+      action: 'ADMIN_RESET_DATABASE',
       success: true,
       metadata: {
         requestedBy: 'admin',
@@ -958,10 +958,10 @@ app.post('/api/admin/seed-database', authRequired, adminRequired, seedSecretRequ
       userAgent: req.headers['user-agent'],
     })
 
-    res.json({ success: true, message: 'Database seeded successfully.' })
+    res.json({ success: true, message: 'Database reset successfully.' })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'Database seed failed', detail: error.message })
+    res.status(500).json({ error: 'Database reset failed', detail: error.message })
   }
 }))
 

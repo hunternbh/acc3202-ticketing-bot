@@ -47,11 +47,11 @@
 
         <section class="admin-section">
           <div class="section-heading">
-            <h2>Reseed Database</h2>
+            <h2>Reset Database</h2>
             <span>Seed secret required</span>
           </div>
 
-          <form class="reseed-form" @submit.prevent="reseedDatabase">
+          <form class="reseed-form" @submit.prevent="resetDatabase">
             <label>
               Seed Secret
               <input
@@ -67,7 +67,7 @@
               class="danger-button"
               :disabled="seedLoading || !seedSecret.trim()"
             >
-              {{ seedLoading ? 'Reseeding...' : 'Reseed' }}
+              {{ seedLoading ? 'Resetting...' : 'Reset Database' }}
             </button>
           </form>
 
@@ -449,7 +449,7 @@ async function releaseTickets() {
   }
 }
 
-async function reseedDatabase() {
+async function resetDatabase() {
   seedMessage.value = ''
 
   const secret = seedSecret.value.trim()
@@ -460,7 +460,7 @@ async function reseedDatabase() {
   }
 
   const confirmed = window.confirm(
-    'Reseeding will reset users, tickets, purchases, and audit logs. Continue?'
+    'This will reset users, tickets, purchases, and audit logs. Continue?'
   )
 
   if (!confirmed) return
@@ -468,7 +468,7 @@ async function reseedDatabase() {
   seedLoading.value = true
 
   try {
-    const data = await fetchAdminJson('/api/admin/seed-database', {
+    const data = await fetchAdminJson('/api/admin/reset-database', {
       method: 'POST',
       headers: {
         'x-seed-secret': secret,
@@ -477,7 +477,7 @@ async function reseedDatabase() {
 
     seedSecret.value = ''
     await loadDashboard()
-    seedMessage.value = data.message || 'Database seeded successfully.'
+    seedMessage.value = data.message || 'Database reset successfully.'
   } catch (error) {
     seedMessage.value = error.message || 'Could not reseed the database.'
   } finally {
