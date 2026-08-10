@@ -808,8 +808,6 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
       ON ticket_types.id = purchase_items.ticket_type_id
     LEFT JOIN events
       ON events.id = purchases.event_id
-    WHERE users.is_admin = FALSE
-      AND users.is_instructor = FALSE
     GROUP BY
       users.id,
       users.email,
