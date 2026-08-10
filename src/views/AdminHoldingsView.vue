@@ -25,8 +25,8 @@
       <div v-else class="admin-content">
         <section class="summary-row" aria-label="Admin summary">
           <div>
-            <div class="label">Students</div>
-            <div class="summary-number">{{ uniqueStudentCount }}</div>
+            <div class="label">Users</div>
+            <div class="summary-number">{{ uniqueUserCount }}</div>
           </div>
 
           <div>
@@ -146,7 +146,7 @@
 
         <section class="admin-section">
           <div class="section-heading">
-            <h2>Student Ticket Holdings</h2>
+            <h2>All User Ticket Holdings</h2>
           </div>
 
           <div class="table-wrap">
@@ -269,7 +269,7 @@ const currentUser = ref(null)
 const selectedTicketTypeId = ref('')
 const additionalQuantity = ref(10)
 
-const uniqueStudentCount = computed(() => {
+const uniqueUserCount = computed(() => {
   return new Set(holdings.value.map((row) => row.email)).size
 })
 
