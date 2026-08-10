@@ -60,10 +60,10 @@ try {
 
     await client.query(
       `
-      INSERT INTO users (email, password_hash, wallet_balance, is_admin)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO users (email, password_hash, wallet_balance, is_admin, is_instructor)
+      VALUES ($1, $2, $3, $4, $5)
       `,
-      [user.email, passwordHash, user.walletBalance ?? 3, user.isAdmin]
+      [user.email, passwordHash, user.walletBalance ?? 3, user.isAdmin, user.isInstructor]
     )
   }
 
@@ -105,7 +105,7 @@ try {
     INSERT INTO purchases (user_id, event_id, total_amount, status, ip_address, user_agent)
     SELECT id, 2, 20.00, 'SUCCESS', 'seed', 'database initialization'
     FROM users
-    WHERE email = 'fake-main-buyer@seatgate-ticket.com'
+    WHERE email = 'fakebuyer'
     RETURNING id
     `
   )

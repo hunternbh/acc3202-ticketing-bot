@@ -5,16 +5,16 @@
 
       <h1>Sign In</h1>
       <p class="subtitle">
-        Use the email and password assigned by the instructor.
+        Use the username and password assigned by the instructor.
       </p>
 
       <form @submit.prevent="handleLogin">
-        <label>Email</label>
+        <label>Username</label>
         <input
           v-model="email"
-          type="email"
-          placeholder="student01@seatgate-ticket.com"
-          autocomplete="email"
+          type="text"
+          placeholder="student01"
+          autocomplete="username"
         />
 
         <label>Password</label>
