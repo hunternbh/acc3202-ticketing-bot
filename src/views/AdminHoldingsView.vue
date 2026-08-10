@@ -40,8 +40,13 @@
           </div>
 
           <div>
-            <div class="label">Available</div>
-            <div class="summary-number">{{ availableTickets }}</div>
+            <div class="label">Trial Available</div>
+            <div class="summary-number">{{ trialAvailableTickets }}</div>
+          </div>
+
+          <div>
+            <div class="label">Main Available</div>
+            <div class="summary-number">{{ mainAvailableTickets }}</div>
           </div>
         </section>
 
@@ -280,9 +285,19 @@ const totalRevenue = computed(() => {
   }, 0)
 })
 
-const availableTickets = computed(() => {
+const trialAvailableTickets = computed(() => {
   return ticketTypes.value.reduce((sum, ticket) => {
-    return sum + Number(ticket.availableQuantity || 0)
+    return ticket.eventId === 1
+      ? sum + Number(ticket.availableQuantity || 0)
+      : sum
+  }, 0)
+})
+
+const mainAvailableTickets = computed(() => {
+  return ticketTypes.value.reduce((sum, ticket) => {
+    return ticket.eventId === 2
+      ? sum + Number(ticket.availableQuantity || 0)
+      : sum
   }, 0)
 })
 
@@ -544,7 +559,7 @@ function formatTime(value) {
 
 .summary-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   background: white;
   border: 1px solid #d8d8d8;
 }

@@ -371,7 +371,6 @@ app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
     FROM ticket_types
     WHERE event_id = $1
     ORDER BY
-      CASE WHEN name = 'Main Tickets' THEN 0 ELSE 1 END,
       is_released DESC,
       GREATEST(released_quantity - sold_quantity, 0) DESC,
       price ASC,
@@ -387,7 +386,7 @@ app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
     tickets: mainTicket ? [mainTicket].map((ticket) => ({
       id: ticket.id,
       eventId: ticket.event_id,
-      name: 'Main Tickets',
+      name: ticket.name,
       price: Number(ticket.price),
       totalQuantity: ticket.total_quantity,
       releasedQuantity: ticket.released_quantity,
@@ -884,15 +883,16 @@ app.post('/api/admin/reset-database', authRequired, adminRequired, asyncHandler(
       const eventId = event[0]
       const price = eventId === 1 ? 0.00 : 1.00
       const releasedQuantity = eventId === 1 ? 99999 : 0
+      const ticketName = eventId === 1 ? 'Trial Tickets' : 'Main Tickets'
 
       await query(
         `
         INSERT INTO ticket_types
         (event_id, name, price, total_quantity, released_quantity, sold_quantity, is_released)
         VALUES
-        ($1, 'Main Tickets', $2, 99999, $3, 0, $4)
+        ($1, $2, $3, 99999, $4, 0, $5)
         `,
-        [eventId, price, releasedQuantity, releasedQuantity > 0]
+        [eventId, ticketName, price, releasedQuantity, releasedQuantity > 0]
       )
     }
 
