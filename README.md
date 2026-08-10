@@ -301,7 +301,7 @@ For an initialized database, log in as admin and use the **Reset Database** butt
 ## 2. Login as Admin
 
 ```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"email":"admin","password":"adminpass"}'
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"username":"admin","password":"adminpass"}'
 ```
 
 The command should return something like this:

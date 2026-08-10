@@ -11,7 +11,7 @@
       <form @submit.prevent="handleLogin">
         <label>Username</label>
         <input
-          v-model="email"
+          v-model="username"
           type="text"
           placeholder="student01"
           autocomplete="username"
@@ -46,7 +46,7 @@ import { ref } from 'vue'
 
 const emit = defineEmits(['close', 'login-success'])
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const errorMessage = ref('')
 
@@ -77,7 +77,7 @@ async function handleLogin() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: email.value.trim(),
+        username: username.value.trim(),
         password: password.value,
       }),
     })
