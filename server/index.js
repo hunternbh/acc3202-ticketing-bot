@@ -276,9 +276,10 @@ app.get('/api/health/db', asyncHandler(async (req, res) => {
 }))
 
 app.post('/api/login', asyncHandler(async (req, res) => {
-  const { email, password } = req.body
+  const username = req.body.username ?? req.body.email
+  const { password } = req.body
 
-  if (!email || !password) {
+  if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required' })
   }
 
@@ -290,7 +291,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
     FROM users
     WHERE LOWER(email) = LOWER($1)
     `,
-    [email]
+    [username]
   )
 
   const user = result.rows[0]
@@ -299,7 +300,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
     await writeAuditLog({
       action: 'LOGIN_FAILED',
       success: false,
-      metadata: { email, reason: 'unknown_email' },
+      metadata: { username, reason: 'unknown_username' },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     })
@@ -314,7 +315,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
       userId: user.id,
       action: 'LOGIN_FAILED',
       success: false,
-      metadata: { email, reason: 'bad_password' },
+      metadata: { username, reason: 'bad_password' },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     })
@@ -326,7 +327,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
     userId: user.id,
     action: 'LOGIN_SUCCESS',
     success: true,
-    metadata: { email },
+    metadata: { username },
     ip: req.ip,
     userAgent: req.headers['user-agent'],
   })

@@ -12,7 +12,7 @@ QUANTITY = 5
 def login():
     url = f"{BASE_URL}/api/login"
     payload = {
-        "email": USERNAME,
+        "username": USERNAME,
         "password": PASSWORD
     }
 
