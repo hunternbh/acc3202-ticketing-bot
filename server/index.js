@@ -36,6 +36,7 @@ if (hasBuiltFrontend) {
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
 const MAX_TICKETS_PER_EVENT = 5
+let instructorRoleMigration = null
 
 function asyncHandler(handler) {
   return function wrappedAsyncHandler(req, res, next) {
@@ -91,7 +92,7 @@ function rateLimit({
 }
 
 function createToken(user) {
-  const data = `${user.id}:${user.is_admin ? 1 : 0}`
+  const data = `${user.id}:${user.is_admin ? 1 : 0}:${user.is_instructor ? 1 : 0}`
   const hmac = crypto.createHmac('sha256', JWT_SECRET).update(data).digest('hex').slice(0, 10)
   return `${data}:${hmac}`
 }
@@ -102,16 +103,21 @@ function getBearerToken(req) {
 }
 
 function parseAuthToken(token) {
-  const [id, isAdmin, hmac] = token.split(':')
-  const expectedHmac = crypto.createHmac('sha256', JWT_SECRET).update(`${id}:${isAdmin}`).digest('hex').slice(0, 10)
+  const [id, isAdmin, isInstructor, hmac] = token.split(':')
+  const expectedHmac = crypto
+    .createHmac('sha256', JWT_SECRET)
+    .update(`${id}:${isAdmin}:${isInstructor}`)
+    .digest('hex')
+    .slice(0, 10)
 
-  if (!id || !isAdmin || hmac !== expectedHmac) {
+  if (!id || !isAdmin || !isInstructor || hmac !== expectedHmac) {
     throw new Error('Invalid token')
   }
 
   return {
     id: parseInt(id, 10),
-    isAdmin: isAdmin === '1'
+    isAdmin: isAdmin === '1',
+    isInstructor: isInstructor === '1',
   }
 }
 
@@ -140,6 +146,30 @@ const userTwoPerSecond = rateLimit({
 function adminRequired(req, res, next) {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: 'Admin access required' })
+  }
+
+  next()
+}
+
+function ensureInstructorRoleColumn() {
+  if (!instructorRoleMigration) {
+    instructorRoleMigration = query(
+      `
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS is_instructor BOOLEAN NOT NULL DEFAULT FALSE
+      `
+    ).catch((error) => {
+      instructorRoleMigration = null
+      throw error
+    })
+  }
+
+  return instructorRoleMigration
+}
+
+function instructorRequired(req, res, next) {
+  if (!req.user?.isInstructor) {
+    return res.status(403).json({ error: 'Instructor access required' })
   }
 
   next()
@@ -249,12 +279,14 @@ app.post('/api/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' })
+    return res.status(400).json({ error: 'Username and password are required' })
   }
+
+  await ensureInstructorRoleColumn()
 
   const result = await query(
     `
-    SELECT id, email, password_hash, wallet_balance, is_admin
+    SELECT id, email, password_hash, wallet_balance, is_admin, is_instructor
     FROM users
     WHERE LOWER(email) = LOWER($1)
     `,
@@ -272,7 +304,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
       userAgent: req.headers['user-agent'],
     })
 
-    return res.status(401).json({ error: 'Invalid email or password' })
+    return res.status(401).json({ error: 'Invalid username or password' })
   }
 
   const ok = await bcrypt.compare(password, user.password_hash)
@@ -287,7 +319,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
       userAgent: req.headers['user-agent'],
     })
 
-    return res.status(401).json({ error: 'Invalid email or password' })
+    return res.status(401).json({ error: 'Invalid username or password' })
   }
 
   await writeAuditLog({
@@ -308,6 +340,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
       email: user.email,
       walletBalance: Number(user.wallet_balance),
       isAdmin: user.is_admin,
+      isInstructor: user.is_instructor,
     },
   })
 }))
@@ -315,7 +348,7 @@ app.post('/api/login', asyncHandler(async (req, res) => {
 app.get('/api/me', authRequired, userTwoPerSecond, asyncHandler(async (req, res) => {
   const result = await query(
     `
-    SELECT id, email, wallet_balance, is_admin
+    SELECT id, email, wallet_balance, is_admin, is_instructor
     FROM users
     WHERE id = $1
     `,
@@ -333,8 +366,13 @@ app.get('/api/me', authRequired, userTwoPerSecond, asyncHandler(async (req, res)
     email: user.email,
     walletBalance: Number(user.wallet_balance),
     isAdmin: user.is_admin,
+    isInstructor: user.is_instructor,
   })
 }))
+
+app.get('/api/instructor/access', authRequired, instructorRequired, (req, res) => {
+  res.json({ ok: true })
+})
 
 app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
   const eventId = Number(req.params.eventId)
@@ -770,6 +808,7 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
     LEFT JOIN events
       ON events.id = purchases.event_id
     WHERE users.is_admin = FALSE
+      AND users.is_instructor = FALSE
     GROUP BY
       users.id,
       users.email,
@@ -808,6 +847,7 @@ app.get('/api/admin/revenue', authRequired, adminRequired, asyncHandler(async (r
       ON events.id = purchases.event_id
     WHERE purchases.status = 'SUCCESS'
       AND users.is_admin = FALSE
+      AND users.is_instructor = FALSE
     GROUP BY
       users.email,
       events.title,
@@ -858,10 +898,10 @@ app.post('/api/admin/reset-database', authRequired, adminRequired, asyncHandler(
 
       await query(
         `
-        INSERT INTO users (email, password_hash, wallet_balance, is_admin)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (email, password_hash, wallet_balance, is_admin, is_instructor)
+        VALUES ($1, $2, $3, $4, $5)
         `,
-        [user.email, passwordHash, user.walletBalance ?? 3.0, user.isAdmin]
+        [user.email, passwordHash, user.walletBalance ?? 3.0, user.isAdmin, user.isInstructor]
       )
     }
 
@@ -902,7 +942,7 @@ app.post('/api/admin/reset-database', authRequired, adminRequired, asyncHandler(
       INSERT INTO purchases (user_id, event_id, total_amount, status, ip_address, user_agent)
       SELECT id, 2, 20.00, 'SUCCESS', 'seed', 'database seed'
       FROM users
-      WHERE email = 'fake-main-buyer@seatgate-ticket.com'
+      WHERE email = 'fakebuyer'
       RETURNING id
       `
     )

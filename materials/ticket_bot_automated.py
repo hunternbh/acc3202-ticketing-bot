@@ -1,23 +1,18 @@
 import requests
-import time
-
 BASE_URL = "https://acc3202-ticketing-bot.onrender.com"
 
-EMAIL = "test@test.com"
-PASSWORD = "test"
+USERNAME = "instructor"
+PASSWORD = "password"
 
-EVENT_ID = 2
-TICKET_TYPE_ID = 5
-QUANTITY = 1
-
-DELAY_SECONDS = 2      # avoid hammering the server
-MAX_ATTEMPTS = 30      # safety limit
+EVENT_ID = 1
+TICKET_TYPE_ID = 1
+QUANTITY = 5
 
 
 def login():
     url = f"{BASE_URL}/api/login"
     payload = {
-        "email": EMAIL,
+        "email": USERNAME,
         "password": PASSWORD
     }
 
@@ -36,7 +31,7 @@ def login():
     return token
 
 
-def buy_one_ticket(token):
+def automated_buy(token):
     url = f"{BASE_URL}/api/purchase"
 
     headers = {
@@ -70,31 +65,7 @@ def buy_one_ticket(token):
 
 def main():
     token = login()
-
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        print(f"\nAttempt {attempt}/{MAX_ATTEMPTS}")
-
-        try:
-            response = buy_one_ticket(token)
-
-            if response.status_code == 200:
-                print("Purchase request accepted.")
-
-            elif response.status_code == 401:
-                print("Token expired or invalid. Logging in again.")
-                token = login()
-
-            elif response.status_code == 429:
-                print("Rate limited. Waiting longer.")
-                time.sleep(10)
-
-            else:
-                print("Purchase failed or blocked.")
-
-        except requests.exceptions.RequestException as e:
-            print(f"Network error: {e}")
-
-        time.sleep(DELAY_SECONDS)
+    automated_buy(token)
 
 
 if __name__ == "__main__":

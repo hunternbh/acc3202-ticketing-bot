@@ -152,7 +152,7 @@
           <div class="table-wrap">
             <div class="holdings-table table">
               <div class="table-header">
-                <div>Email</div>
+                <div>Username</div>
                 <div>Wallet</div>
                 <div>Event</div>
                 <div>Ticket Type</div>
@@ -184,7 +184,7 @@
           <div class="table-wrap">
             <div class="revenue-table table">
               <div class="table-header">
-                <div>Email</div>
+                <div>Username</div>
                 <div>Event</div>
                 <div>Ticket Type</div>
                 <div>Qty</div>
