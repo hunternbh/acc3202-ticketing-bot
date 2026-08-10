@@ -4,4 +4,5 @@ export const seedUsers = [
   { email: 'test@test.com', password: 'password', walletBalance: 99, isAdmin: false },
   { email: 'student1@gmail.com', password: 'password', walletBalance: 3, isAdmin: false },
   { email: 'student2@gmail.com', password: 'password', walletBalance: 3, isAdmin: false },
+  { email: 'student3@gmail.com', password: 'password', walletBalance: 3, isAdmin: false },
 ]
