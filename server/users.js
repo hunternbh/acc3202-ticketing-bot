@@ -1,7 +1,76 @@
 export const seedUsers = [
   { email: 'fakebuyer', password: 'password', walletBalance: 79, isAdmin: false, isInstructor: false },
-  { email: 'admin', password: 'adminpass', walletBalance: 5, isAdmin: true, isInstructor: false },
+  { email: 'admin', password: 'adminpass2', walletBalance: 5, isAdmin: true, isInstructor: false },
   { email: 'instructor', password: 'password', walletBalance: 3, isAdmin: false, isInstructor: true },
+  { email: 'group1-1', password: 'group1-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group1-2', password: 'group1-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group1-3', password: 'group1-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group1-4', password: 'group1-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group2-1', password: 'group2-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group2-2', password: 'group2-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group2-3', password: 'group2-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group2-4', password: 'group2-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group3-1', password: 'group3-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group3-2', password: 'group3-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group3-3', password: 'group3-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group3-4', password: 'group3-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group4-1', password: 'group4-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group4-2', password: 'group4-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group4-3', password: 'group4-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group4-4', password: 'group4-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group5-1', password: 'group5-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group5-2', password: 'group5-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group5-3', password: 'group5-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group5-4', password: 'group5-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group6-1', password: 'group6-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group6-2', password: 'group6-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group6-3', password: 'group6-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group6-4', password: 'group6-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group7-1', password: 'group7-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group7-2', password: 'group7-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group7-3', password: 'group7-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group7-4', password: 'group7-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group8-1', password: 'group8-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group8-2', password: 'group8-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group8-3', password: 'group8-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group8-4', password: 'group8-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group9-1', password: 'group9-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group9-2', password: 'group9-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group9-3', password: 'group9-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group9-4', password: 'group9-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group10-1', password: 'group10-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group10-2', password: 'group10-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group10-3', password: 'group10-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group10-4', password: 'group10-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group11-1', password: 'group11-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group11-2', password: 'group11-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group11-3', password: 'group11-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group11-4', password: 'group11-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group12-1', password: 'group12-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group12-2', password: 'group12-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group12-3', password: 'group12-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group12-4', password: 'group12-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+  
+  { email: 'group13-1', password: 'group13-1', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group13-2', password: 'group13-2', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group13-3', password: 'group13-3', walletBalance: 3, isAdmin: false, isInstructor: false },
+  { email: 'group13-4', password: 'group13-4', walletBalance: 3, isAdmin: false, isInstructor: false },
+
+
+
+
+  
   { email: 'cindy', password: 'cindy', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'luga', password: 'luga', walletBalance: 3, isAdmin: false, isInstructor: false },
   { email: 'tatyana', password: 'tatyana', walletBalance: 3, isAdmin: false, isInstructor: false },
