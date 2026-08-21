@@ -13,7 +13,7 @@
         <input
           v-model="username"
           type="text"
-          placeholder="student01"
+          placeholder="student1"
           autocomplete="username"
         />
 

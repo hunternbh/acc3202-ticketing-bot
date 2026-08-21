@@ -11,7 +11,6 @@ CREATE TABLE users (
   password_hash TEXT NOT NULL,
   wallet_balance NUMERIC(10, 2) NOT NULL DEFAULT 5.00,
   is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-  is_instructor BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -8,7 +8,7 @@ import PurchaseSuccessView from '../views/PurchaseSuccessView.vue'
 import PurchaseFailureView from '../views/PurchaseFailureView.vue'
 import MyAccountView from '../views/MyAccountView.vue'
 import AdminHoldingsView from '../views/AdminHoldingsView.vue'
-import InstructorDemoView from '../views/InstructorDemoView.vue'
+import AutomatedBuyView from '../views/AutomatedBuyView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,9 +43,9 @@ const router = createRouter({
       redirect: '/admin',
     },
     {
-      path: '/instructor',
-      name: 'instructor',
-      component: InstructorDemoView,
+      path: '/automated-buy',
+      name: 'automated-buy',
+      component: AutomatedBuyView,
     },
     {
       path: '/cart',

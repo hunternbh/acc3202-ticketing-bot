@@ -22,9 +22,9 @@
           </RouterLink>
 
           <RouterLink
-            v-if="currentUser.isInstructor"
-            to="/instructor"
-            class="instructor-link"
+            v-if="currentUser.isAdmin"
+            to="/automated-buy"
+            class="automated-buy-link"
           >
             Automated Buy
           </RouterLink>
@@ -151,8 +151,6 @@ function setCurrentUser(user) {
 
   if (user?.isAdmin) {
     router.push('/admin')
-  } else if (user?.isInstructor) {
-    router.push('/instructor')
   }
 }
 
@@ -454,7 +452,7 @@ input {
 
 .account-link,
 .admin-link,
-.instructor-link {
+.automated-buy-link {
   color: white;
   font-size: 15px;
   font-weight: 800;
@@ -463,12 +461,12 @@ input {
 
 .account-link:hover,
 .admin-link:hover,
-.instructor-link:hover {
+.automated-buy-link:hover {
   text-decoration: underline;
 }
 
 .admin-link,
-.instructor-link {
+.automated-buy-link {
   background: white;
   color: #0057ff;
   padding: 8px 12px;

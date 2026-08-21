@@ -1,8 +1,8 @@
 import requests
 BASE_URL = "https://acc3202-ticketing-bot.onrender.com"
 
-USERNAME = "instructor"
-PASSWORD = "password"
+USERNAME = "admin"
+PASSWORD = "adminpass2"
 
 EVENT_ID = 1
 TICKET_TYPE_ID = 1

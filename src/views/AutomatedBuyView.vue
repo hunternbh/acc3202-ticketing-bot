@@ -1,8 +1,8 @@
 <template>
-  <main class="instructor-page">
+  <main class="automated-buy-page">
     <SiteHeader :show-title="false" :show-search="false" />
 
-    <section class="instructor-wrap">
+    <section class="automated-buy-wrap">
       <div v-if="checkingAccess" class="status-box">
         Loading...
       </div>
@@ -11,9 +11,9 @@
         {{ accessError }}
       </div>
 
-      <div v-else class="instructor-content">
+      <div v-else class="automated-buy-content">
         <header class="page-heading">
-          <h1>Instructor Demonstration</h1>
+          <h1>Automated Buy Demonstration</h1>
         </header>
 
         <section class="demo-card">
@@ -30,7 +30,7 @@
 
         <section class="code-card">
           <h2>Pseudocode</h2>
-          <pre><code>token = SIGN_IN("instructor", "password")
+          <pre><code>token = SIGN_IN("admin", "adminpass2")
 
 ticket = GET("/api/events/1/tickets").tickets[0]
 
@@ -71,21 +71,21 @@ onMounted(async () => {
   const token = localStorage.getItem('ticketToken')
 
   if (!token) {
-    accessError.value = 'Instructor access required.'
+    accessError.value = 'Admin access required.'
     checkingAccess.value = false
     return
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/instructor/access`, {
+    const response = await fetch(`${API_BASE}/api/admin/automated-buy/access`, {
       headers: { Authorization: `Bearer ${token}` },
     })
 
     if (!response.ok) {
-      accessError.value = 'Instructor access required.'
+      accessError.value = 'Admin access required.'
     }
   } catch {
-    accessError.value = 'Instructor access required.'
+    accessError.value = 'Admin access required.'
   } finally {
     checkingAccess.value = false
   }
@@ -107,7 +107,7 @@ async function automatedBuy() {
   const token = localStorage.getItem('ticketToken')
 
   if (!token) {
-    accessError.value = 'Instructor access required.'
+    accessError.value = 'Admin access required.'
     return
   }
 
@@ -168,20 +168,20 @@ function updateStoredWallet(walletBalance) {
 </script>
 
 <style scoped>
-.instructor-page {
+.automated-buy-page {
   min-height: 100vh;
   background: #f2f2f2;
   color: #111;
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.instructor-wrap {
+.automated-buy-wrap {
   max-width: 960px;
   margin: 36px auto 70px;
   padding: 0 24px;
 }
 
-.instructor-content {
+.automated-buy-content {
   display: grid;
   gap: 24px;
 }
@@ -250,7 +250,7 @@ pre {
 }
 
 @media (max-width: 650px) {
-  .instructor-wrap {
+  .automated-buy-wrap {
     padding: 0 16px;
   }
 

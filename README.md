@@ -274,11 +274,11 @@ https://acc3202-ticketing-bot.onrender.com
 
 ```text
 Admin username: admin
-Admin password: adminpass
-Instructor username: instructor
-Instructor password: password
-Student usernames: student01 through student53
-Student password: password
+Admin password: adminpass2
+Fake buyer username: fakebuyer
+Fake buyer password: password
+Student usernames: student1 through student50
+Student passwords: same as username
 ```
 
 ---
@@ -305,7 +305,7 @@ For an initialized database, log in as admin and use the **Reset Database** butt
 ## 2. Login as Admin
 
 ```bash
-curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"username":"admin","password":"adminpass"}'
+curl -X POST "https://acc3202-ticketing-bot.onrender.com/api/login" -H "Content-Type: application/json" -d '{"username":"admin","password":"adminpass2"}'
 ```
 
 The command should return something like this:

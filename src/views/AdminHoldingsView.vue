@@ -146,6 +146,44 @@
 
         <section class="admin-section">
           <div class="section-heading">
+            <h2>First to Buy Max Tickets</h2>
+          </div>
+
+          <div
+            v-if="maxTicketBuyers.length === 0"
+            class="empty-leaderboard"
+            aria-label="No users have reached the maximum ticket limit yet"
+          ></div>
+
+          <div v-else class="table-wrap">
+            <div class="max-ticket-table table">
+              <div class="table-header">
+                <div>Rank</div>
+                <div>Username</div>
+                <div>Event</div>
+                <div>Ticket Type</div>
+                <div>Limit</div>
+                <div>Reached At</div>
+              </div>
+
+              <div
+                v-for="(row, index) in maxTicketBuyers"
+                :key="`${row.email}-${row.ticket_type_id}`"
+                class="table-row"
+              >
+                <div>{{ index + 1 }}</div>
+                <div>{{ row.email }}</div>
+                <div>{{ row.event_title }}</div>
+                <div>{{ row.ticket_type }}</div>
+                <div>{{ Number(row.max_tickets || row.quantity_owned || 0) }}</div>
+                <div>{{ formatTime(row.max_reached_at) }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-section">
+          <div class="section-heading">
             <h2>All User Ticket Holdings</h2>
           </div>
 
@@ -262,6 +300,7 @@ const errorMessage = ref('')
 const releaseMessage = ref('')
 const seedMessage = ref('')
 const holdings = ref([])
+const maxTicketBuyers = ref([])
 const revenueRows = ref([])
 const ticketTypes = ref([])
 const auditLogs = ref([])
@@ -369,14 +408,22 @@ async function loadDashboard() {
   }
 
   try {
-    const [holdingsData, revenueData, ticketTypeData, auditLogData] = await Promise.all([
+    const [
+      holdingsData,
+      maxTicketBuyerData,
+      revenueData,
+      ticketTypeData,
+      auditLogData,
+    ] = await Promise.all([
       fetchAdminJson('/api/admin/holdings'),
+      fetchAdminJson('/api/admin/max-ticket-buyers'),
       fetchAdminJson('/api/admin/revenue'),
       fetchAdminJson('/api/admin/ticket-types'),
       fetchAdminJson('/api/admin/audit-logs'),
     ])
 
     holdings.value = holdingsData
+    maxTicketBuyers.value = maxTicketBuyerData
     revenueRows.value = revenueData
     ticketTypes.value = ticketTypeData
     auditLogs.value = auditLogData.slice(0, 20)
@@ -680,6 +727,11 @@ function formatTime(value) {
   grid-template-columns: 2fr 0.8fr 1.5fr 1.1fr 0.5fr 1.4fr;
 }
 
+.max-ticket-table .table-header,
+.max-ticket-table .table-row {
+  grid-template-columns: 80px 1.8fr 1.6fr 1.1fr 0.7fr 1.5fr;
+}
+
 .revenue-table .table-header,
 .revenue-table .table-row {
   grid-template-columns: 2fr 1.5fr 1.1fr 0.5fr 0.8fr 0.8fr 1.4fr;
@@ -706,6 +758,10 @@ function formatTime(value) {
 
 .table-row:last-child {
   border-bottom: none;
+}
+
+.empty-leaderboard {
+  min-height: 72px;
 }
 
 .success {

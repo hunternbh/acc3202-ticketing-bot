@@ -60,10 +60,10 @@ try {
 
     await client.query(
       `
-      INSERT INTO users (email, password_hash, wallet_balance, is_admin, is_instructor)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO users (email, password_hash, wallet_balance, is_admin)
+      VALUES ($1, $2, $3, $4)
       `,
-      [user.email, passwordHash, user.walletBalance ?? 3, user.isAdmin, user.isInstructor]
+      [user.email, passwordHash, user.walletBalance ?? 3, user.isAdmin]
     )
   }
 
