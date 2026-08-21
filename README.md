@@ -14,6 +14,7 @@ The purpose of this case is to help students understand IT audit risk, internal 
 
 - [Instructor setup video](https://youtu.be/wHpjUpBzZMc)
 - [Class briefing video](https://youtu.be/hIh2D8scudc)
+- [Class briefing video 2 - How to observe API](https://youtu.be/u1Z670PWvwY)
 
 ## Student Materials
 
