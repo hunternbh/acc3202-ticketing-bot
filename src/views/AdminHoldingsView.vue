@@ -50,6 +50,101 @@
           </div>
         </section>
 
+        <nav class="admin-tabs" aria-label="Admin panel tabs">
+          <button
+            type="button"
+            :class="{ active: activeAdminTab === 'dashboard' }"
+            @click="activeAdminTab = 'dashboard'"
+          >
+            Dashboard
+          </button>
+
+          <button
+            type="button"
+            :class="{ active: activeAdminTab === 'limits' }"
+            @click="activeAdminTab = 'limits'"
+          >
+            Limits & Money
+          </button>
+        </nav>
+
+        <div v-if="activeAdminTab === 'limits'" class="tab-panel">
+          <section class="admin-section">
+            <div class="section-heading">
+              <h2>Ticket Limits</h2>
+              <span>{{ ticketLimit }} per ticket type</span>
+            </div>
+
+            <form class="settings-form" @submit.prevent="updateTicketLimit">
+              <label>
+                Default User Limit
+                <input
+                  v-model.number="ticketLimitInput"
+                  type="number"
+                  min="1"
+                  step="1"
+                />
+              </label>
+
+              <button type="submit" :disabled="limitLoading">
+                {{ limitLoading ? 'Saving...' : 'Save Limit' }}
+              </button>
+            </form>
+
+            <p v-if="limitMessage" class="release-message">
+              {{ limitMessage }}
+            </p>
+
+            <div class="table-wrap">
+              <div class="limits-table table">
+                <div class="table-header">
+                  <div>Username</div>
+                  <div>Account Type</div>
+                  <div>Ticket Limit</div>
+                </div>
+
+                <div
+                  v-for="row in userLimitRows"
+                  :key="row.email"
+                  class="table-row"
+                >
+                  <div>{{ row.email }}</div>
+                  <div>{{ row.isAdmin ? 'Admin' : 'User' }}</div>
+                  <div>{{ row.limitLabel }}</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-section">
+            <div class="section-heading">
+              <h2>Increase User Money</h2>
+              <span>Applies to every account</span>
+            </div>
+
+            <form class="settings-form" @submit.prevent="increaseAllWallets">
+              <label>
+                Amount to Add
+                <input
+                  v-model.number="walletIncreaseAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                />
+              </label>
+
+              <button type="submit" :disabled="walletTopUpLoading">
+                {{ walletTopUpLoading ? 'Adding...' : 'Add Money' }}
+              </button>
+            </form>
+
+            <p v-if="walletMessage" class="release-message">
+              {{ walletMessage }}
+            </p>
+          </section>
+        </div>
+
+        <div v-else class="tab-panel">
         <section class="admin-section">
           <div class="section-heading">
             <h2>Reset Database</h2>
@@ -281,6 +376,7 @@
             </div>
           </div>
         </section>
+        </div>
       </div>
     </section>
   </main>
@@ -296,17 +392,25 @@ const API_BASE =
 const loading = ref(true)
 const releaseLoading = ref(false)
 const seedLoading = ref(false)
+const limitLoading = ref(false)
+const walletTopUpLoading = ref(false)
 const errorMessage = ref('')
 const releaseMessage = ref('')
 const seedMessage = ref('')
+const limitMessage = ref('')
+const walletMessage = ref('')
 const holdings = ref([])
 const maxTicketBuyers = ref([])
 const revenueRows = ref([])
 const ticketTypes = ref([])
 const auditLogs = ref([])
 const currentUser = ref(null)
+const activeAdminTab = ref('dashboard')
 const selectedTicketTypeId = ref('')
 const additionalQuantity = ref(10)
+const ticketLimit = ref(3)
+const ticketLimitInput = ref(3)
+const walletIncreaseAmount = ref(1)
 
 const uniqueUserCount = computed(() => {
   return new Set(holdings.value.map((row) => row.email)).size
@@ -344,6 +448,31 @@ const selectedTicket = computed(() => {
   return ticketTypes.value.find((ticket) => {
     return String(ticket.ticketTypeId) === String(selectedTicketTypeId.value)
   })
+})
+
+const userLimitRows = computed(() => {
+  const usersByEmail = new Map()
+
+  for (const row of holdings.value) {
+    if (row.email && !usersByEmail.has(row.email)) {
+      usersByEmail.set(row.email, row)
+    }
+  }
+
+  return Array.from(usersByEmail.values())
+    .sort((a, b) => String(a.email).localeCompare(String(b.email), undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    }))
+    .map((row) => {
+      const isAdmin = Boolean(row.is_admin)
+
+      return {
+        email: row.email,
+        isAdmin,
+        limitLabel: isAdmin ? 'No cap' : `${ticketLimit.value} per ticket type`,
+      }
+    })
 })
 
 onMounted(() => {
@@ -399,6 +528,8 @@ async function loadDashboard() {
   loading.value = true
   errorMessage.value = ''
   releaseMessage.value = ''
+  limitMessage.value = ''
+  walletMessage.value = ''
   currentUser.value = getStoredUser()
 
   if (!getToken() || !currentUser.value?.isAdmin) {
@@ -414,12 +545,14 @@ async function loadDashboard() {
       revenueData,
       ticketTypeData,
       auditLogData,
+      ticketLimitData,
     ] = await Promise.all([
       fetchAdminJson('/api/admin/holdings'),
       fetchAdminJson('/api/admin/max-ticket-buyers'),
       fetchAdminJson('/api/admin/revenue'),
       fetchAdminJson('/api/admin/ticket-types'),
       fetchAdminJson('/api/admin/audit-logs'),
+      fetchAdminJson('/api/admin/ticket-limit'),
     ])
 
     holdings.value = holdingsData
@@ -427,6 +560,8 @@ async function loadDashboard() {
     revenueRows.value = revenueData
     ticketTypes.value = ticketTypeData
     auditLogs.value = auditLogData.slice(0, 20)
+    ticketLimit.value = Number(ticketLimitData.limit || 3)
+    ticketLimitInput.value = ticketLimit.value
 
     const selectionExists = ticketTypes.value.some((ticket) => {
       return String(ticket.ticketTypeId) === String(selectedTicketTypeId.value)
@@ -442,6 +577,86 @@ async function loadDashboard() {
     errorMessage.value = error.message || 'Could not load admin data.'
   } finally {
     loading.value = false
+  }
+}
+
+function parsePositiveInteger(value) {
+  const numericValue = Number(value)
+  return Number.isInteger(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+async function updateTicketLimit() {
+  limitMessage.value = ''
+  const limit = parsePositiveInteger(ticketLimitInput.value)
+
+  if (!limit) {
+    limitMessage.value = 'Enter a whole number greater than zero.'
+    return
+  }
+
+  limitLoading.value = true
+
+  try {
+    const data = await fetchAdminJson('/api/admin/ticket-limit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ limit }),
+    })
+
+    ticketLimit.value = Number(data.limit)
+    ticketLimitInput.value = ticketLimit.value
+
+    const [maxTicketBuyerData, auditLogData] = await Promise.all([
+      fetchAdminJson('/api/admin/max-ticket-buyers'),
+      fetchAdminJson('/api/admin/audit-logs'),
+    ])
+
+    maxTicketBuyers.value = maxTicketBuyerData
+    auditLogs.value = auditLogData.slice(0, 20)
+    limitMessage.value = `Ticket limit updated to ${ticketLimit.value} per ticket type.`
+  } catch (error) {
+    limitMessage.value = error.message || 'Could not update the ticket limit.'
+  } finally {
+    limitLoading.value = false
+  }
+}
+
+async function increaseAllWallets() {
+  walletMessage.value = ''
+  const amount = Number(walletIncreaseAmount.value)
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    walletMessage.value = 'Enter an amount greater than zero.'
+    return
+  }
+
+  walletTopUpLoading.value = true
+
+  try {
+    const data = await fetchAdminJson('/api/admin/increase-wallets', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ amount }),
+    })
+
+    const [holdingsData, auditLogData] = await Promise.all([
+      fetchAdminJson('/api/admin/holdings'),
+      fetchAdminJson('/api/admin/audit-logs'),
+    ])
+
+    holdings.value = holdingsData
+    auditLogs.value = auditLogData.slice(0, 20)
+    updateStoredAdminWallet()
+    walletMessage.value =
+      `Added $${Number(data.amount).toFixed(2)} to ${data.usersUpdated} accounts.`
+  } catch (error) {
+    walletMessage.value = error.message || 'Could not increase user money.'
+  } finally {
+    walletTopUpLoading.value = false
   }
 }
 
@@ -527,6 +742,21 @@ async function resetDatabase() {
 function formatTime(value) {
   return new Date(value).toLocaleString()
 }
+
+function updateStoredAdminWallet() {
+  const adminRow = holdings.value.find((row) => row.email === currentUser.value?.email)
+
+  if (!adminRow || !currentUser.value) return
+
+  const updatedUser = {
+    ...currentUser.value,
+    walletBalance: Number(adminRow.wallet_balance),
+  }
+
+  currentUser.value = updatedUser
+  localStorage.setItem('ticketUser', JSON.stringify(updatedUser))
+  window.dispatchEvent(new Event('ticket-user-updated'))
+}
 </script>
 
 <style scoped>
@@ -565,7 +795,8 @@ function formatTime(value) {
 
 .refresh-button,
 .release-form button,
-.reseed-form button {
+.reseed-form button,
+.settings-form button {
   border: none;
   border-radius: 4px;
   background: #0057ff;
@@ -578,7 +809,8 @@ function formatTime(value) {
 
 .refresh-button:disabled,
 .release-form button:disabled,
-.reseed-form button:disabled {
+.reseed-form button:disabled,
+.settings-form button:disabled {
   background: #9bbcff;
   cursor: not-allowed;
 }
@@ -600,6 +832,35 @@ function formatTime(value) {
 }
 
 .admin-content {
+  display: grid;
+  gap: 26px;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #cfcfcf;
+}
+
+.admin-tabs button {
+  border: 1px solid #cfcfcf;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: #e7e7e7;
+  color: #333;
+  padding: 12px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-tabs button.active {
+  background: white;
+  color: #111;
+}
+
+.tab-panel {
   display: grid;
   gap: 26px;
 }
@@ -672,7 +933,16 @@ function formatTime(value) {
   padding: 22px;
 }
 
-.release-form label {
+.settings-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) auto;
+  gap: 16px;
+  align-items: end;
+  padding: 22px;
+}
+
+.release-form label,
+.settings-form label {
   display: grid;
   gap: 7px;
   font-size: 13px;
@@ -682,7 +952,8 @@ function formatTime(value) {
 }
 
 .release-form select,
-.release-form input {
+.release-form input,
+.settings-form input {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #bfc7d3;
@@ -730,6 +1001,11 @@ function formatTime(value) {
 .max-ticket-table .table-header,
 .max-ticket-table .table-row {
   grid-template-columns: 80px 1.8fr 1.6fr 1.1fr 0.7fr 1.5fr;
+}
+
+.limits-table .table-header,
+.limits-table .table-row {
+  grid-template-columns: 2fr 1fr 1.3fr;
 }
 
 .revenue-table .table-header,
@@ -782,7 +1058,8 @@ function formatTime(value) {
 
   .summary-row,
   .release-form,
-  .reseed-form {
+  .reseed-form,
+  .settings-form {
     grid-template-columns: 1fr;
   }
 

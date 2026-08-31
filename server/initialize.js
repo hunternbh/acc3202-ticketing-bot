@@ -7,6 +7,7 @@ import { seedUsers } from './users.js'
 const { Client } = pg
 const databaseUrl = process.env.DATABASE_URL
 const applicationTables = [
+  'app_settings',
   'users',
   'events',
   'ticket_types',
@@ -63,7 +64,7 @@ try {
       INSERT INTO users (email, password_hash, wallet_balance, is_admin)
       VALUES ($1, $2, $3, $4)
       `,
-      [user.email, passwordHash, user.walletBalance ?? 3, user.isAdmin]
+      [user.email, passwordHash, user.walletBalance ?? 5, user.isAdmin]
     )
   }
 

@@ -35,7 +35,69 @@ if (hasBuiltFrontend) {
 
 const PORT = process.env.PORT || 10000
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this'
-const MAX_TICKETS_PER_TYPE = 5
+const DEFAULT_TICKET_LIMIT_PER_TYPE = 3
+const TICKET_LIMIT_SETTING_KEY = 'ticket_limit_per_type'
+let settingsTableReady = null
+
+function parsePositiveInteger(value) {
+  const numericValue = Number(value)
+  return Number.isInteger(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+function ensureSettingsTable() {
+  if (!settingsTableReady) {
+    settingsTableReady = query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `)
+      .then(() =>
+        query(
+          `
+            INSERT INTO app_settings (key, value)
+            VALUES ($1, $2)
+            ON CONFLICT (key) DO NOTHING
+          `,
+          [TICKET_LIMIT_SETTING_KEY, String(DEFAULT_TICKET_LIMIT_PER_TYPE)]
+        )
+      )
+      .catch((error) => {
+        settingsTableReady = null
+        throw error
+      })
+  }
+
+  return settingsTableReady
+}
+
+async function getTicketLimit() {
+  await ensureSettingsTable()
+  const result = await query('SELECT value FROM app_settings WHERE key = $1', [
+    TICKET_LIMIT_SETTING_KEY,
+  ])
+  return parsePositiveInteger(result.rows[0]?.value) || DEFAULT_TICKET_LIMIT_PER_TYPE
+}
+
+async function setTicketLimit(limit) {
+  await ensureSettingsTable()
+  const result = await query(
+    `
+      INSERT INTO app_settings (key, value, updated_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (key)
+      DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      RETURNING value, updated_at
+    `,
+    [TICKET_LIMIT_SETTING_KEY, String(limit)]
+  )
+
+  return {
+    limit: Number(result.rows[0].value),
+    updatedAt: result.rows[0].updated_at,
+  }
+}
 
 function asyncHandler(handler) {
   return function wrappedAsyncHandler(req, res, next) {
@@ -345,6 +407,72 @@ app.get('/api/admin/automated-buy/access', authRequired, adminRequired, (req, re
   res.json({ ok: true })
 })
 
+app.get('/api/admin/ticket-limit', authRequired, adminRequired, asyncHandler(async (req, res) => {
+  const limit = await getTicketLimit()
+  res.json({ limit })
+}))
+
+app.post('/api/admin/ticket-limit', authRequired, adminRequired, asyncHandler(async (req, res) => {
+  const limit = parsePositiveInteger(req.body?.limit)
+
+  if (!limit) {
+    return res.status(400).json({ error: 'Ticket limit must be a whole number greater than 0' })
+  }
+
+  const setting = await setTicketLimit(limit)
+
+  await writeAuditLog({
+    userId: req.user.id,
+    action: 'ADMIN_UPDATE_TICKET_LIMIT',
+    success: true,
+    metadata: { limit },
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  })
+
+  res.json({
+    success: true,
+    limit: setting.limit,
+    updatedAt: setting.updatedAt,
+  })
+}))
+
+app.post('/api/admin/increase-wallets', authRequired, adminRequired, asyncHandler(async (req, res) => {
+  const amount = Number(req.body?.amount)
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'Amount must be greater than 0' })
+  }
+
+  const normalizedAmount = Number(amount.toFixed(2))
+  const result = await query(
+    `
+    UPDATE users
+    SET wallet_balance = wallet_balance + $1
+    RETURNING id
+    `,
+    [normalizedAmount]
+  )
+
+  await writeAuditLog({
+    userId: req.user.id,
+    action: 'ADMIN_INCREASE_ALL_WALLETS',
+    success: true,
+    metadata: {
+      amount: normalizedAmount,
+      usersUpdated: result.rowCount,
+    },
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  })
+
+  res.json({
+    success: true,
+    amount: normalizedAmount,
+    usersUpdated: result.rowCount,
+  })
+}))
+
 app.get('/api/events/:eventId/tickets', asyncHandler(async (req, res) => {
   const eventId = Number(req.params.eventId)
 
@@ -442,7 +570,7 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
 
     const userResult = await client.query(
       `
-      SELECT id, email, wallet_balance
+      SELECT id, email, wallet_balance, is_admin
       FROM users
       WHERE id = $1
       FOR UPDATE
@@ -520,60 +648,63 @@ app.post('/api/purchase', authRequired, userTwoPerSecond, asyncHandler(async (re
       }
     }
 
-    const existingTypeQuantityResult = await client.query(
-      `
-      SELECT
-        purchase_items.ticket_type_id,
-        COALESCE(SUM(purchase_items.quantity), 0)::int AS quantity_owned
-      FROM purchases
-      JOIN purchase_items
-        ON purchase_items.purchase_id = purchases.id
-      WHERE purchases.user_id = $1
-        AND purchases.status = 'SUCCESS'
-        AND purchase_items.ticket_type_id = ANY($2::int[])
-      GROUP BY purchase_items.ticket_type_id
-      `,
-      [req.user.id, ticketIds]
-    )
+    if (!user.is_admin) {
+      const ticketLimit = await getTicketLimit()
+      const existingTypeQuantityResult = await client.query(
+        `
+        SELECT
+          purchase_items.ticket_type_id,
+          COALESCE(SUM(purchase_items.quantity), 0)::int AS quantity_owned
+        FROM purchases
+        JOIN purchase_items
+          ON purchase_items.purchase_id = purchases.id
+        WHERE purchases.user_id = $1
+          AND purchases.status = 'SUCCESS'
+          AND purchase_items.ticket_type_id = ANY($2::int[])
+        GROUP BY purchase_items.ticket_type_id
+        `,
+        [req.user.id, ticketIds]
+      )
 
-    const quantityOwnedByTicketId = new Map(
-      existingTypeQuantityResult.rows.map((row) => [
-        row.ticket_type_id,
-        Number(row.quantity_owned || 0),
-      ])
-    )
+      const quantityOwnedByTicketId = new Map(
+        existingTypeQuantityResult.rows.map((row) => [
+          row.ticket_type_id,
+          Number(row.quantity_owned || 0),
+        ])
+      )
 
-    for (const [ticketTypeId, requestedTicketQuantity] of requestedQuantityByTicketId) {
-      const quantityOwned = quantityOwnedByTicketId.get(ticketTypeId) || 0
-      const remainingAllowed = Math.max(MAX_TICKETS_PER_TYPE - quantityOwned, 0)
+      for (const [ticketTypeId, requestedTicketQuantity] of requestedQuantityByTicketId) {
+        const quantityOwned = quantityOwnedByTicketId.get(ticketTypeId) || 0
+        const remainingAllowed = Math.max(ticketLimit - quantityOwned, 0)
 
-      if (requestedTicketQuantity > remainingAllowed) {
-        await client.query('ROLLBACK')
+        if (requestedTicketQuantity > remainingAllowed) {
+          await client.query('ROLLBACK')
 
-        await writeAuditLog({
-          userId: req.user.id,
-          action: 'PURCHASE_FAILED',
-          eventId,
-          ticketTypeId,
-          success: false,
-          metadata: {
-            reason: 'per_ticket_type_limit_exceeded',
-            limit: MAX_TICKETS_PER_TYPE,
+          await writeAuditLog({
+            userId: req.user.id,
+            action: 'PURCHASE_FAILED',
+            eventId,
+            ticketTypeId,
+            success: false,
+            metadata: {
+              reason: 'per_ticket_type_limit_exceeded',
+              limit: ticketLimit,
+              quantityOwned,
+              requestedQuantity: requestedTicketQuantity,
+              remainingAllowed,
+            },
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+          }, clientQuery)
+
+          return res.status(400).json({
+            error: `Each user is limited to ${ticketLimit} tickets of each ticket type`,
+            limit: ticketLimit,
+            ticketTypeId,
             quantityOwned,
-            requestedQuantity: requestedTicketQuantity,
             remainingAllowed,
-          },
-          ip: req.ip,
-          userAgent: req.headers['user-agent'],
-        }, clientQuery)
-
-        return res.status(400).json({
-          error: `Each user is limited to ${MAX_TICKETS_PER_TYPE} tickets of each ticket type`,
-          limit: MAX_TICKETS_PER_TYPE,
-          ticketTypeId,
-          quantityOwned,
-          remainingAllowed,
-        })
+          })
+        }
       }
     }
 
@@ -785,6 +916,7 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
       users.id AS user_id,
       users.email,
       users.wallet_balance,
+      users.is_admin,
       events.title AS event_title,
       ticket_types.name AS ticket_type,
       SUM(purchase_items.quantity) AS quantity_owned,
@@ -803,6 +935,7 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
       users.id,
       users.email,
       users.wallet_balance,
+      users.is_admin,
       events.title,
       ticket_types.name
     ORDER BY
@@ -816,6 +949,7 @@ app.get('/api/admin/holdings', authRequired, adminRequired, asyncHandler(async (
 }))
 
 app.get('/api/admin/max-ticket-buyers', authRequired, adminRequired, asyncHandler(async (req, res) => {
+  const ticketLimit = await getTicketLimit()
   const result = await query(
     `
     WITH purchase_events AS (
@@ -840,6 +974,7 @@ app.get('/api/admin/max-ticket-buyers', authRequired, adminRequired, asyncHandle
         ON events.id = purchases.event_id
       WHERE purchases.status = 'SUCCESS'
         AND COALESCE(purchases.ip_address, '') <> 'seed'
+        AND users.is_admin = FALSE
       GROUP BY
         users.id,
         users.email,
@@ -899,7 +1034,7 @@ app.get('/api/admin/max-ticket-buyers', authRequired, adminRequired, asyncHandle
       event_title ASC,
       ticket_type ASC
     `,
-    [MAX_TICKETS_PER_TYPE]
+    [ticketLimit]
   )
 
   res.json(result.rows)
@@ -980,7 +1115,7 @@ app.post('/api/admin/reset-database', authRequired, adminRequired, asyncHandler(
         INSERT INTO users (email, password_hash, wallet_balance, is_admin)
         VALUES ($1, $2, $3, $4)
         `,
-        [user.email, passwordHash, user.walletBalance ?? 3.0, user.isAdmin]
+        [user.email, passwordHash, user.walletBalance ?? 5.0, user.isAdmin]
       )
     }
 

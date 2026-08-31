@@ -4,6 +4,16 @@ DROP TABLE IF EXISTS purchases CASCADE;
 DROP TABLE IF EXISTS ticket_types CASCADE;
 DROP TABLE IF EXISTS events CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS app_settings CASCADE;
+
+CREATE TABLE app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO app_settings (key, value)
+VALUES ('ticket_limit_per_type', '3');
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
