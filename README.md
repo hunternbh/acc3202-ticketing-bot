@@ -97,10 +97,14 @@ Use any name you like.
 Set the following values:
 
 ```text
-Root Directory: server
-Build Command: npm run build
+Root Directory: leave blank
+Build Command: npm run render-build
 Start Command: npm start
 ```
+
+Do not set the root directory to `server` when you want Render to host the website.
+That deploys only the API, and app routes such as `/admin` will show
+`Frontend build is not deployed on this Render service.`
 
 ---
 
