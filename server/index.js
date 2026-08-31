@@ -1263,7 +1263,6 @@ if (hasBuiltFrontend) {
   app.get('*', (req, res) => {
     res.status(404).json({
       error: 'Frontend build is not deployed on this Render service.',
-      fix: 'In Render, leave Root Directory blank, use Build Command "npm run render-build", and use Start Command "npm start".',
       frontendUrl: 'https://hunternbh.github.io/acc3202-ticketing-bot/',
     })
   })
