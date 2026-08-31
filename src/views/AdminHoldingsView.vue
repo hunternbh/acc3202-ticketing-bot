@@ -71,6 +71,33 @@
         <div v-if="activeAdminTab === 'limits'" class="tab-panel">
           <section class="admin-section">
             <div class="section-heading">
+              <h2>Increase User Money</h2>
+              <span>Applies to every account</span>
+            </div>
+
+            <form class="settings-form" @submit.prevent="increaseAllWallets">
+              <label>
+                Amount to Add
+                <input
+                  v-model.number="walletIncreaseAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                />
+              </label>
+
+              <button type="submit" :disabled="walletTopUpLoading">
+                {{ walletTopUpLoading ? 'Adding...' : 'Add Money' }}
+              </button>
+            </form>
+
+            <p v-if="walletMessage" class="release-message">
+              {{ walletMessage }}
+            </p>
+          </section>
+
+          <section class="admin-section">
+            <div class="section-heading">
               <h2>Ticket Limits</h2>
               <span>{{ ticketLimit }} per ticket type</span>
             </div>
@@ -114,33 +141,6 @@
                 </div>
               </div>
             </div>
-          </section>
-
-          <section class="admin-section">
-            <div class="section-heading">
-              <h2>Increase User Money</h2>
-              <span>Applies to every account</span>
-            </div>
-
-            <form class="settings-form" @submit.prevent="increaseAllWallets">
-              <label>
-                Amount to Add
-                <input
-                  v-model.number="walletIncreaseAmount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                />
-              </label>
-
-              <button type="submit" :disabled="walletTopUpLoading">
-                {{ walletTopUpLoading ? 'Adding...' : 'Add Money' }}
-              </button>
-            </form>
-
-            <p v-if="walletMessage" class="release-message">
-              {{ walletMessage }}
-            </p>
           </section>
         </div>
 
