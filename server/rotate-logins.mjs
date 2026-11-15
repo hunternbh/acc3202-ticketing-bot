@@ -20,9 +20,11 @@ const client = new pg.Client({
   connectionTimeoutMillis: 15000,
 })
 
+let transaction = false
 try {
   await client.connect()
   await client.query('BEGIN')
+  transaction = true
   await client.query('LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE')
   const checks = await client.query('SELECT LOWER(email) AS name, is_admin FROM users WHERE LOWER(email) = ANY($1)', [expected])
   if (checks.rowCount !== expected.length || checks.rows.filter(row => row.is_admin).length !== 1 ||
@@ -35,9 +37,10 @@ try {
   }
   const auditAccount = await client.query("UPDATE users SET password_hash = $1 WHERE LOWER(email) = 'fakebuyer' AND NOT is_admin", [disabledAccountHash])
   await client.query('COMMIT')
+  transaction = false
   console.log(`Rotated ${rows.length} standard logins and disabled the credential of ${auditAccount.rowCount} seeded audit account.`)
 } catch (error) {
-  await client.query('ROLLBACK').catch(() => {})
+  if (transaction) await client.query('ROLLBACK').catch(() => {})
   console.error('Credential rotation failed:', error.code || (error.message.startsWith('Expected roster') ? 'roster mismatch' : error.name))
   process.exitCode = 1
 } finally {
